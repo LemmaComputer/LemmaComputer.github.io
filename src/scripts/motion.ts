@@ -286,102 +286,111 @@ if (g && ST) {
   }
 
   /* ------------------------------------------------------------------ *
-   * GOVERNANCE — scroll-driven attack storyline down the defensive stack
+   * ARCHITECTURE HERO — scroll-driven "assemble → swap → run" story.
+   * The centerpiece: any agent plugs into one governed VM sandbox; everyday
+   * work flows through; the risky moves (web/egress, tools/MCP) are caught.
+   * Beats: 1 ASSEMBLE (boundary draws, guardrails fade in) → 2 SWAP (agent
+   * chips weave into the socket) → 3 RUN (a good + a risky action leave the
+   * agent; the risky one is stopped at a watched path, the good one is
+   * recorded to the signed trail). Straight x/y + class-toggle only — no
+   * MotionPathPlugin. Under RM / narrow screens the CSS shows the final
+   * assembled, fully-lit state and this early-returns.
    * ------------------------------------------------------------------ */
-  function initGovernance() {
-    const stage = document.querySelector('[data-gov]') as HTMLElement | null;
+  function initArch() {
+    const stage = document.querySelector('[data-arch]') as HTMLElement | null;
     const section = $('governance');
     if (!stage || !section) return;
     if (RM || !DESKTOP) return; // CSS renders the final assembled state statically
 
-    const card = (n: string) => stage.querySelector(`[data-node="${n}"]`) as HTMLElement | null;
-    const link = (n: string) => stage.querySelector(`[data-link="${n}"]`) as HTMLElement | null;
-    const beats = qsa('.gov-beat', section);
-    const agent = card('agent');
-    const policy = card('policy');
-    const firewall = card('firewall');
-    const trail = card('trail');
+    const node = (n: string) => stage.querySelector(`[data-node="${n}"]`) as HTMLElement | null;
+    const notes = qsa('.arch-note', section);
+    const socket = stage.querySelector('[data-arch-socket]') as HTMLElement | null;
+    const boundary = stage.querySelector('[data-boundary]') as HTMLElement | null;
+    const chips = qsa('.arch-chip', stage);
+    const edgeIn = stage.querySelector('[data-edge="in"]') as HTMLElement | null;
+    const run = node('run');
+    const web = node('web');
+    const tools = node('tools');
+    const trail = node('trail');
+    const pktAgent = stage.querySelector('[data-pkt="agent"]') as HTMLElement | null;
     const good = stage.querySelector('[data-pkt="good"]') as HTMLElement | null;
-    const rogue = stage.querySelector('[data-pkt="rogue"]') as HTMLElement | null;
-    const hash = stage.querySelector('[data-hash]') as HTMLElement | null;
-    const linkAP = link('a-p');
-    const linkPF = link('p-f');
-    const linkFT = link('f-t');
+    const risk = stage.querySelector('[data-pkt="risk"]') as HTMLElement | null;
+    const trailRow = stage.querySelector('[data-trail-row]') as HTMLElement | null;
 
-    const litBeat = (i: number) => beats.forEach((b, k) => b.classList.toggle('lit', k === i));
+    const litNote = (i: number) => notes.forEach((b, k) => b.classList.toggle('lit', k === i));
 
-    // A packet rides its link from top (start) to just past the next card. The
-    // link is 46px tall; overshoot a touch so it visually enters the card.
-    const RIDE = 66;
+    // Chips start stacked out of the socket; swap = each docks then yields.
+    g.set(chips, { autoAlpha: 0, y: -14 });
+    g.set([good, risk, pktAgent], { autoAlpha: 0 });
 
     const tl = g.timeline({
       scrollTrigger: {
         trigger: section,
         start: 'top top',
-        end: '+=340%',
+        end: '+=360%',
         pin: stage,
         scrub: 0.6,
         invalidateOnRefresh: true,
       },
     });
 
-    // 1 · ISSUE — agent lights; both packets emerge and descend to policy.
-    tl.to(agent, { onStart: () => agent?.classList.add('lit'), duration: 0.01 }, 0)
-      .fromTo([good, rogue], { opacity: 0, y: 0 }, { opacity: 1, duration: 0.3 }, 0.05)
-      .to(linkAP, { '--fill': 1, duration: 0.5 }, 0.1)
-      .to([good, rogue], { y: RIDE, duration: 0.6, ease: 'none' }, 0.15);
+    // 1 · ASSEMBLE — boundary draws, sandbox + guardrails + trail light in.
+    tl.to(boundary, { onStart: () => boundary?.classList.add('drawn'), duration: 0.01 }, 0)
+      .to(stage, { onStart: () => stage.classList.add('assembled'), duration: 0.01 }, 0.05)
+      .add(() => litNote(0), 0.05);
 
-    // 2 · POLICY — layer lights; hash types in; rogue blocked, good continues.
-    tl.to(policy, { onStart: () => policy?.classList.add('lit'), duration: 0.01 }, 0.85)
-      .add(typeHash(hash), 0.9)
-      .add(() => litBeat(0), 0.85)
-      // rogue shudders and dies at the policy layer
-      .to(rogue, { x: 6, duration: 0.06, repeat: 5, yoyo: true }, 1.15)
-      .to(policy, { onStart: () => policy?.classList.add('blocked'), duration: 0.01 }, 1.15)
-      .to(rogue, { opacity: 0, scale: 0.4, duration: 0.4 }, 1.35)
-      .to(policy, { onComplete: () => policy?.classList.remove('blocked'), duration: 0.01 }, 1.7);
+    // 2 · SWAP — the freedom beat. Claude docks, Codex slides over it, then
+    //     Hermes; the socket keeps whichever is last (the "…or your own" ghost
+    //     stays as a hint). Shows: bring any agent; nothing else changes.
+    chips.forEach((chip, i) => {
+      const at = 0.4 + i * 0.28;
+      tl.to(chip, { autoAlpha: 1, y: 0, duration: 0.22, ease: 'power2.out' }, at);
+      if (i < chips.length - 1)
+        tl.to(chip, { autoAlpha: 0.28, y: 0, duration: 0.18 }, at + 0.2);
+    });
+    tl.to(socket, { onStart: () => socket?.classList.add('lit'), duration: 0.01 }, 0.5)
+      .add(() => litNote(1), 1.3);
 
-    // 3 · FIREWALL — good passes policy → firewall.
-    tl.to(linkPF, { '--fill': 1, duration: 0.5 }, 1.8)
-      .to(good, { y: RIDE * 2, duration: 0.6, ease: 'none' }, 1.85)
-      .to(firewall, { onStart: () => firewall?.classList.add('lit'), duration: 0.01 }, 2.2)
-      .add(() => litBeat(1), 2.2);
+    // connector agent → sandbox draws; the agent packet rides in and the
+    // running-agent node lights ("runs in").
+    tl.to(edgeIn, { '--fill': 1, duration: 0.4 }, 1.5)
+      .fromTo(pktAgent, { autoAlpha: 0, x: 0 }, { autoAlpha: 1, x: 54, duration: 0.4, ease: 'none' }, 1.55)
+      .to(pktAgent, { autoAlpha: 0, duration: 0.15 }, 1.95)
+      .to(run, { onStart: () => run?.classList.add('lit'), duration: 0.01 }, 1.95);
 
-    // 4 · APPROVALS beat (copy-only) then TRAIL — signed row stamps.
-    tl.add(() => litBeat(2), 2.55)
-      .to(linkFT, { '--fill': 1, duration: 0.5 }, 2.75)
-      .to(good, { y: RIDE * 3, duration: 0.6, ease: 'none' }, 2.8)
-      .to(trail, { onStart: () => trail?.classList.add('lit'), duration: 0.01 }, 3.15)
-      .to(good, { opacity: 0, duration: 0.3 }, 3.2)
-      .add(() => litBeat(3), 3.15);
+    // 3 · RUN — two actions leave the running agent: everyday (good) + risky.
+    tl.add(() => litNote(2), 2.1)
+      .fromTo(good, { autoAlpha: 0, x: 0, y: 0 }, { autoAlpha: 1, duration: 0.2 }, 2.15)
+      .fromTo(risk, { autoAlpha: 0, x: 0, y: 0 }, { autoAlpha: 1, duration: 0.2 }, 2.15)
+      // risky one climbs to the WEB & EGRESS watched path and is stopped.
+      .to(risk, { x: 150, y: -70, duration: 0.55, ease: 'none' }, 2.3)
+      .to(web, { onStart: () => web?.classList.add('watching'), duration: 0.01 }, 2.7)
+      .to(risk, { x: '+=5', duration: 0.05, repeat: 5, yoyo: true }, 2.85)
+      .to(web, { onStart: () => web?.classList.add('blocked'), duration: 0.01 }, 2.9)
+      .to(risk, { autoAlpha: 0, scale: 0.4, duration: 0.35 }, 3.0)
+      .to(web, { onComplete: () => web?.classList.remove('blocked'), duration: 0.01 }, 3.35)
+      // the everyday one passes to the signed trail and stamps a row.
+      .to(good, { x: 150, y: 74, duration: 0.6, ease: 'none' }, 2.7)
+      .to(tools, { onStart: () => tools?.classList.add('watching'), duration: 0.01 }, 2.95)
+      .to(trail, { onStart: () => trail?.classList.add('lit'), duration: 0.01 }, 3.3)
+      .to(good, { autoAlpha: 0, duration: 0.25 }, 3.35)
+      .to(trailRow, { onStart: () => trailRow?.classList.add('stamped'), duration: 0.01 }, 3.4)
+      .add(() => litNote(3), 3.3);
 
-    // Reversing scroll must undo the lit/blocked classes GSAP can't tween.
-    function typeHash(el: HTMLElement | null) {
-      const full = 'policy · v1·a7f39c2';
-      const stub = 'policy · v1·——————';
-      const proxy = { p: 0 };
-      return g.to(proxy, {
-        p: 1,
-        duration: 0.6,
-        ease: 'none',
-        onUpdate: () => {
-          if (!el) return;
-          const n = Math.round(proxy.p * (full.length - 'policy · v1·'.length));
-          el.textContent = full.slice(0, 'policy · v1·'.length + n) + stub.slice('policy · v1·'.length + n);
-        },
-      });
-    }
-
-    // Keep the class-based lit states in sync when scrubbing backward, since
-    // onStart callbacks only fire on forward playback.
+    // Reverse-scrub sync: class toggles GSAP can't tween back on their own.
     tl.eventCallback('onUpdate', () => {
       const p = tl.progress();
-      agent?.classList.toggle('lit', p > 0);
-      policy?.classList.toggle('lit', p > 0.2);
-      firewall?.classList.toggle('lit', p > 0.55);
-      trail?.classList.toggle('lit', p > 0.78);
-      if (p < 0.28 || p > 0.42) policy?.classList.remove('blocked');
-      else policy?.classList.add('blocked');
+      boundary?.classList.toggle('drawn', p > 0);
+      stage.classList.toggle('assembled', p > 0.02);
+      socket?.classList.toggle('lit', p > 0.13);
+      run?.classList.toggle('lit', p > 0.52);
+      web?.classList.toggle('watching', p > 0.72);
+      tools?.classList.toggle('watching', p > 0.78);
+      trail?.classList.toggle('lit', p > 0.88);
+      trailRow?.classList.toggle('stamped', p > 0.9);
+      // the block flash only lives in a narrow band of the run beat
+      if (p > 0.76 && p < 0.9) web?.classList.add('blocked');
+      else web?.classList.remove('blocked');
     });
   }
 
@@ -389,7 +398,7 @@ if (g && ST) {
    * INIT + ScrollTrigger robustness
    * ------------------------------------------------------------------ */
   initDeck();
-  initGovernance();
+  initArch();
 
   // Pinning depends on final document height. Refresh after fonts swap and
   // after the eager deck/hero images decode, or the governance pin jumps.

@@ -16,8 +16,9 @@ const dims = {
   approvals: { w: 1600, h: 1031 },
   trail: { w: 1600, h: 1039 },
   schedules: { w: 1600, h: 1031 },
-  claudeClarify: { w: 1600, h: 1149 },
-  claudeReason: { w: 1600, h: 1149 },
+  // Full-Ubuntu-desktop proof shots (Claude running inside the governed VM).
+  claudeDesktop: { w: 1600, h: 837 },
+  claudeBrowser: { w: 1600, h: 962 },
 };
 
 // The six non-hero shots, folded into one tabbed deck. Every alt/caption/callout
@@ -33,24 +34,6 @@ const deckShots: {
   caption: string;
   callouts?: { x: number; y: number; text: string; gutter?: Gutter }[];
 }[] = [
-  {
-    id: 'ask',
-    slug: 'claude-clarify.png',
-    label: 'Ask',
-    width: dims.claudeClarify.w,
-    height: dims.claudeClarify.h,
-    alt: 'Claude working inside a LemmaComputer workspace: asked to help build a financial model, it pauses to ask what kind — Operating forecast, Valuation model, Project finance, Personal finance, or something else — with the composer showing the request routed through the organization route.',
-    caption: 'Claude at work — a real agent session inside a governed LemmaComputer workspace',
-  },
-  {
-    id: 'reason',
-    slug: 'claude-reason.png',
-    label: 'Reason',
-    width: dims.claudeReason.w,
-    height: dims.claudeReason.h,
-    alt: 'The same Claude session reasoning through a live task — estimating the IRR and payback for the Jewel Changi Airport project — its thought process proposing to work at project level in Singapore dollars from public data and clearly stated assumptions.',
-    caption: 'Claude reasoning through a live task, every action still under workspace policy',
-  },
   {
     id: 'agents',
     slug: 'agents.png',
@@ -172,7 +155,7 @@ const deckShots: {
           <a class="btn btn-p" href={site.githubHref} target="_blank" rel="noopener"
             >Learn more on GitHub</a
           >
-          <a class="btn btn-g" href="#agents">See how it works</a>
+          <a class="btn btn-g" href="#governance">See how it works</a>
         </div>
         <Shot
           src="workspaces.png"
@@ -189,33 +172,196 @@ const deckShots: {
       </div>
     </section>
 
-    <!-- 2 · THE TENSION (type only) ---------------------------------------- -->
-    <section class="panel center void short" id="tension">
+    <!-- 2 · THE ARCHITECTURE — the animated, scroll-driven hero ------------ -->
+    <!-- This IS the page's centerpiece and carries the #governance anchor.
+         "Swap any agent into a governed sandbox; the risky stuff is watched."
+         The diagram assembles → swaps agents → runs as you scroll (motion.ts,
+         initArch). Under reduced motion / narrow screens the CSS renders the
+         final assembled, fully-lit state statically. The full plain-language
+         story lives in the aria-label and in the annotation column below. -->
+    <section class="panel void arch" id="governance">
       <div class="wrap">
-        <p class="label" data-r>THE TRADE-OFF EVERYONE MAKES</p>
-        <h2 class="serif t-xl" data-r style="margin-top:18px">
-          Pick any agent, or keep control.<br />You shouldn't have to choose.
-        </h2>
-        <p class="lede" data-r style="margin-top:24px">
-          Let people run whatever agent they like and shadow AI spreads across
-          unmanaged machines. Lock everything down and the work moves somewhere you
-          can't see. LemmaComputer resolves the tension: any agent is welcome, but
-          it only ever acts through a workspace you govern.
-        </p>
+        <div class="sec-head arch-head" data-r>
+          <p class="label">01 · HOW IT WORKS</p>
+          <h2 class="serif t-l">Any agent, dropped into a governed computer.</h2>
+          <p class="lede">
+            Bring whatever agent you like — Claude, Codex, Hermes, or your own. It
+            runs inside one governed VM sandbox with a real desktop. Everyday work
+            just flows; the risky moves — reaching the web, or firing a high-risk
+            tool — are watched and controlled, and everything is recorded. Scroll
+            to see it assemble, swap the agent, and run.
+          </p>
+        </div>
+
+        <div class="arch-stage" data-arch>
+          <div
+            class="arch-diagram"
+            role="img"
+            aria-label="How LemmaComputer works: any agent you choose — Claude, Codex, Hermes, or your own — plugs into a single governed identity socket and runs inside one governed VM sandbox built on Kasm, with a real desktop. From the running agent, an everyday action passes straight through and is written to a signed trail. A risky action — reaching the web and egress, or firing a high-risk tool or MCP action — is caught at a watched path: web and egress is filtered by an egress firewall that denies unmatched destinations, and tools and approvals holds new or changed tools until they are reviewed. Nothing crosses those paths unrecorded; before every run LemmaComputer re-checks the workspace, agent, and current policy."
+          >
+            <!-- LEFT · the ANY-AGENT socket (agents swap into one governed identity) -->
+            <div class="arch-agents" data-arch-agents>
+              <span class="arch-zone-tag mono">ANY AGENT</span>
+              <div class="arch-socket" data-arch-socket>
+                <span class="arch-chip" data-agent="claude">Claude</span>
+                <span class="arch-chip" data-agent="codex">Codex</span>
+                <span class="arch-chip" data-agent="hermes">Hermes</span>
+                <span class="arch-chip arch-chip-ghost" data-agent="own">…or your own</span>
+              </div>
+              <span class="arch-sub mono">governed identity</span>
+            </div>
+
+            <!-- connector: agent → sandbox ("runs in") -->
+            <div class="arch-edge arch-edge-in" data-edge="in" aria-hidden="true">
+              <span class="arch-edge-label mono">runs in</span>
+              <span class="arch-pkt arch-pkt-agent" data-pkt="agent"></span>
+            </div>
+
+            <!-- CENTER · the bold governed sandbox boundary (the star) -->
+            <div class="arch-sandbox" data-arch-sandbox>
+              <div class="arch-boundary" data-boundary aria-hidden="true"></div>
+              <span class="arch-corner mono"
+                >GOVERNED VM SANDBOX<span class="arch-corner-sub">Kasm · real desktop</span></span
+              >
+
+              <!-- the running agent inside the sandbox -->
+              <div class="arch-run" data-node="run">
+                <span class="arch-node-label mono">AGENT AT WORK</span>
+                <span class="arch-node-sub">a real desktop, shell &amp; browser</span>
+              </div>
+
+              <!-- two actions leave the agent: everyday (verdigris) + risky (oxide) -->
+              <div class="arch-flows" aria-hidden="true">
+                <span class="arch-pkt arch-pkt-good" data-pkt="good"></span>
+                <span class="arch-pkt arch-pkt-risk" data-pkt="risk"></span>
+              </div>
+
+              <!-- the two watched paths (risky activity is caught here) -->
+              <div class="arch-watched">
+                <div class="arch-node arch-node-watch" data-node="web">
+                  <span class="arch-node-label mono">WEB &amp; EGRESS</span>
+                  <span class="arch-node-sub"
+                    >Egress firewall — deny unmatched · allow only where you say so</span
+                  >
+                  <span class="arch-halt" data-halt="web" aria-hidden="true">✕ stopped</span>
+                </div>
+                <div class="arch-node arch-node-watch" data-node="tools">
+                  <span class="arch-node-label mono">TOOLS &amp; MCP ACTIONS</span>
+                  <span class="arch-node-sub"
+                    >Tools &amp; approvals — high-risk actions reviewed before they run</span
+                  >
+                  <span class="arch-halt" data-halt="tools" aria-hidden="true">✕ stopped</span>
+                </div>
+              </div>
+
+              <!-- the signed trail (everything that passes is recorded) -->
+              <div class="arch-node arch-node-trail" data-node="trail">
+                <span class="arch-node-label mono">SIGNED TRAIL</span>
+                <span class="arch-trail-row mono" data-trail-row>✓ recorded · enrolled device</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- annotation column: the migrated plain-language governance copy -->
+          <ol class="arch-notes" data-arch-notes>
+            <li class="arch-note" data-note="0">
+              <span class="label">SWAP ANY AGENT</span>
+              <p>
+                Claude, Codex, Hermes, or your own — each gets its own{' '}
+                <strong>governed identity</strong>. Swap the agent; nothing else
+                about the guardrails changes.
+              </p>
+            </li>
+            <li class="arch-note" data-note="1">
+              <span class="label">ONE GOVERNED SANDBOX</span>
+              <p>
+                The agent runs inside an isolated <strong>Kasm</strong> boundary with
+                a real desktop — a Managed workspace, or a Disposable open workspace
+                for non-sensitive work.
+              </p>
+            </li>
+            <li class="arch-note" data-note="2">
+              <span class="label">THE RISKY STUFF IS WATCHED</span>
+              <p>
+                Reaching the web goes through the <strong>Egress firewall</strong>
+                (deny unmatched egress); high-risk tools hit
+                <strong>Tools &amp; approvals</strong> and stay blocked until reviewed.
+              </p>
+            </li>
+            <li class="arch-note" data-note="3">
+              <span class="label">EVERYTHING IS RECORDED</span>
+              <p>
+                What passes lands in the <strong>Trail</strong>, signed by an enrolled
+                device. Before every run, LemmaComputer re-checks
+                <strong>the workspace, agent, and current policy</strong>.
+              </p>
+            </li>
+          </ol>
+        </div>
       </div>
     </section>
 
-    <!-- 3 · BRING YOUR OWN AGENT (+ the tabbed deck) ----------------------- -->
+    <!-- 3 · DESKTOP PROOF — 2 big full-Ubuntu-desktop shots ---------------- -->
+    <!-- The Ubuntu desktop is the point: it shows the reader that all of this
+         runs in a real VM, not a chat box. Two large standalone shots, then the
+         tabbed product deck below. -->
+    <section class="panel" id="proof">
+      <div class="wrap">
+        <div class="sec-head" data-r>
+          <p class="label">02 · IT'S A REAL COMPUTER</p>
+          <h2 class="serif t-l">Not a chat box — a whole desktop, in a VM.</h2>
+          <p class="lede">
+            Inside the sandbox the agent gets a real Ubuntu desktop: a browser, a
+            shell, files, and apps. Here's Claude working in one — reachable as a
+            native desktop app, or in the browser at
+            <span class="mono">onecomputer.metech.dev</span>.
+          </p>
+        </div>
+
+        <figure class="shot-desktop" data-r>
+          <img
+            src="/shots/claude-desktop-vm.png"
+            width={dims.claudeDesktop.w}
+            height={dims.claudeDesktop.h}
+            loading="lazy"
+            decoding="async"
+            alt="The full Ubuntu desktop inside a LemmaComputer workspace — Applications and Claude in the top bar, Firefox ESR, Claude CLI, and Claude Desktop launcher icons on the wallpaper — with the Claude Desktop app open, reasoning through a live task: estimating the IRR and payback for the Jewel Changi Airport project."
+          />
+          <figcaption>
+            Claude Desktop, running inside the governed VM — a real Ubuntu desktop,
+            not a stripped-down sandbox.
+          </figcaption>
+        </figure>
+
+        <figure class="shot-desktop" data-r>
+          <img
+            src="/shots/claude-browser-vm.png"
+            width={dims.claudeBrowser.w}
+            height={dims.claudeBrowser.h}
+            loading="lazy"
+            decoding="async"
+            alt="The same governed computer reached in a browser at onecomputer.metech.dev — the Ubuntu desktop inside the workspace, with Claude's Cowork view open, pausing to ask what kind of financial model to build."
+          />
+          <figcaption>
+            The same computer in the browser at
+            <span class="mono">onecomputer.metech.dev</span> — every agent action still
+            inside the governed workspace.
+          </figcaption>
+        </figure>
+      </div>
+    </section>
+
+    <!-- 4 · BRING YOUR OWN AGENT (+ the tabbed product deck) --------------- -->
     <section class="panel" id="agents">
       <div class="wrap">
         <div class="sec-head" data-r>
-          <p class="label">01 · BRING YOUR OWN AGENT</p>
+          <p class="label">03 · TOUR THE COMPUTER</p>
           <h2 class="serif t-l">Every agent gets its own governed identity.</h2>
           <p class="lede">
             Enable Claude, OpenAI, or Hermes — desktop or CLI. Each enabled client
             receives a separate governed identity, model grant, and tool scope, so
-            you can adopt a new agent without re-architecting trust. See Claude at
-            work inside a workspace, then take the tour of the computer around it.
+            you can adopt a new agent without re-architecting trust. Tour the screens
+            that make up the computer around it.
           </p>
         </div>
 
@@ -230,12 +376,12 @@ const deckShots: {
       </div>
     </section>
 
-    <!-- 4 · IT'S A REAL COMPUTER (thin anchor → selects the Computer tab) --- -->
+    <!-- 5 · IT'S A REAL COMPUTER (thin anchor → selects the Computer tab) --- -->
     <section class="panel short" id="computer">
       <div class="wrap">
         <div class="sec-head" data-r>
-          <p class="label">02 · IT'S A REAL COMPUTER</p>
-          <h2 class="serif t-l">A managed desktop, not just a chat box.</h2>
+          <p class="label">04 · WORKSPACE ACCESS</p>
+          <h2 class="serif t-l">Managed, or disposable — your call.</h2>
           <p class="lede">
             Choose a Managed workspace — a restricted, organization-managed
             environment routed through approved models, tools, and destinations —
@@ -249,128 +395,6 @@ const deckShots: {
               >See the workspace access screen ↑</a
             >
           </p>
-        </div>
-      </div>
-    </section>
-
-    <!-- 5 · GOVERNANCE — scroll-driven attack storyline -------------------- -->
-    <section class="panel void gov" id="governance">
-      <div class="wrap gov-grid">
-        <!-- Pinned stage: the defensive stack a request travels down through. -->
-        <div class="gov-stage" data-gov>
-          <div
-            class="gov-diagram"
-            role="img"
-            aria-label="How LemmaComputer governs an agent action: the agent issues a request, the policy layer allows a permitted action and blocks a disallowed one, the egress firewall filters the network, and every action is written to a device-signed trail."
-          >
-            <!-- AGENT -->
-            <div class="gov-card" data-node="agent">
-              <span class="gov-ico" aria-hidden="true">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                  <rect x="4" y="7" width="16" height="12" rx="2" />
-                  <path d="M12 7V4" /><circle cx="9" cy="13" r="1" /><circle cx="15" cy="13" r="1" />
-                </svg>
-              </span>
-              <span class="gov-label mono">AGENT</span>
-              <span class="gov-sub">issues an action</span>
-            </div>
-            <!-- packets + connector agent→policy -->
-            <div class="gov-link" data-link="a-p">
-              <span class="pkt pkt-good" data-pkt="good" aria-hidden="true"></span>
-              <span class="pkt pkt-rogue" data-pkt="rogue" aria-hidden="true"></span>
-            </div>
-
-            <!-- POLICY -->
-            <div class="gov-card" data-node="policy">
-              <span class="gov-ico" aria-hidden="true">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                  <path d="M12 3l7 3v5c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V6l7-3z" />
-                  <path class="ico-check" d="M9 12l2 2 4-4" />
-                </svg>
-              </span>
-              <span class="gov-label mono">POLICY LAYER</span>
-              <span class="gov-hash mono" data-hash>policy · v1·——————</span>
-              <span class="gov-halt" data-halt aria-hidden="true">✕ blocked</span>
-            </div>
-            <div class="gov-link" data-link="p-f"></div>
-
-            <!-- EGRESS FIREWALL -->
-            <div class="gov-card" data-node="firewall">
-              <span class="gov-ico" aria-hidden="true">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                  <rect x="3" y="4" width="18" height="16" rx="1" />
-                  <path d="M3 9h18M3 14h18M9 4v5M15 9v5M9 14v6M15 14v6" />
-                </svg>
-              </span>
-              <span class="gov-label mono">EGRESS FIREWALL</span>
-              <span class="gov-sub">deny unmatched · allow only where you say so</span>
-            </div>
-            <div class="gov-link" data-link="f-t"></div>
-
-            <!-- SIGNED TRAIL -->
-            <div class="gov-card" data-node="trail">
-              <span class="gov-ico" aria-hidden="true">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                  <circle cx="8" cy="12" r="4" /><path d="M12 12h8M17 12v4M20 12v3" />
-                </svg>
-              </span>
-              <span class="gov-label mono">SIGNED TRAIL</span>
-              <span class="gov-sig mono" data-sig>✓ signed · enrolled device</span>
-            </div>
-          </div>
-        </div>
-
-        <!-- Scrolling narrative rail: carries the locked governance copy. -->
-        <div class="gov-beats">
-          <div class="gov-head" data-r>
-            <p class="label">03 · GOVERNANCE THAT TRAVELS WITH THE WORK</p>
-            <h2 class="serif t-l">Watch a rogue action get stopped.</h2>
-            <p class="lede">
-              Governance isn't a setting you hope holds — it's enforced at every
-              layer the work passes through, and every consequential action leaves
-              a signed trace. Scroll to follow a request down the stack.
-            </p>
-          </div>
-
-          <div class="gov-beat" data-beat="0">
-            <p class="label">THE POLICY LAYER</p>
-            <h3 class="serif t-m">Allowed passes; disallowed is blocked.</h3>
-            <p>
-              Every action is checked against a versioned policy before it can act.
-              A permitted request continues; a rogue one is halted at the layer —
-              enforced in Control, not trusted to the desktop client.
-            </p>
-          </div>
-
-          <div class="gov-beat" data-beat="1">
-            <p class="label">EGRESS FIREWALL</p>
-            <h3 class="serif t-m">Deny by default; allow only where you say so.</h3>
-            <p>
-              What survives policy still can't reach the open internet. The egress
-              firewall denies unmatched destinations and permits only the ones you
-              declare — reusable Allow/Deny groups, deny-unmatched by default.
-            </p>
-          </div>
-
-          <div class="gov-beat" data-beat="2">
-            <p class="label">TOOLS &amp; APPROVALS</p>
-            <h3 class="serif t-m">Every tool reviewed against a versioned policy.</h3>
-            <p>
-              New or changed tools stay blocked until the exact definition is
-              reviewed and saved against the organization's Tools &amp; approvals
-              policy — a version hash you can point to later.
-            </p>
-          </div>
-
-          <div class="gov-beat" data-beat="3">
-            <p class="label">THE TRAIL</p>
-            <h3 class="serif t-m">Protected actions, signed by an enrolled device.</h3>
-            <p>
-              The result lands in the Trail — a timeline of verified workspace
-              events where protected actions are signed by an enrolled device, so
-              you can always answer for what an agent did.
-            </p>
-          </div>
         </div>
       </div>
     </section>

@@ -85,63 +85,54 @@ for s in SHOTS:
     process(s)
 
 
-# --- Claude-in-use sample shots --------------------------------------------
-# Two "product in use" shots of Claude working inside a LemmaComputer workspace,
-# captured as floating app windows on the Ubuntu desktop (not the full-bleed
-# settings screens above). The app panel is a light rounded window on a dark
-# desktop, so we auto-detect its bounds by the bright column/row band and crop
-# to it — dropping the OS top bar, wallpaper, desktop icons, and the Firefox URL
-# bar (which carries the workspace UUID). No personal identity appears in these
-# (generic "Greeting"/"Untitled" recents, "Gateway"); nothing to mask.
-try:
-    import numpy as np
+# --- Claude-in-a-VM desktop shots -------------------------------------------
+# Two proof shots of Claude running inside a LemmaComputer workspace, kept as the
+# FULL Ubuntu desktop — the OS top bar ("Applications | Claude"), the purple
+# wallpaper, the launcher icons, and the browser chrome all stay in frame. The
+# desktop IS the point: it shows the reader that all of this runs in a real VM,
+# not a cropped app screenshot. We keep the whole frame and only paint over the
+# one piece of identity that appears: the workspace UUID in the Firefox URL bar
+# of the browser shot. The "onecomputer.metech.dev" host stays visible.
+#
+#   claude-desktop-vm  <- claude-screenshot-1  (Claude Desktop window; no URL
+#                         bar, no UUID → nothing to mask, keep whole frame)
+#   claude-browser-vm  <- claude-screenshot-2  (browser at onecomputer.metech.dev;
+#                         mask ONLY the "/workspaces/<uuid>/?…" run in the URL bar)
+#
+# The URL-bar mask box was measured against the real 2660x1600 frame: the pill
+# background is near-white (253,253,253); the box starts just right of ".dev/"
+# and ends just left of the trailing toolbar icons, clearing the UUID + query
+# while leaving the host and the page below untouched.
+DESKTOP_SHOTS = [
+    {"src": "/Users/ttwj/Desktop/claude-screenshot-1.png", "slug": "claude-desktop-vm"},
+    {
+        "src": "/Users/ttwj/Desktop/claude-screenshot-2.png",
+        "slug": "claude-browser-vm",
+        "masks": [(628, 8, 2210, 74)],
+        "mask_fill": (253, 253, 253),
+    },
+]
 
-    IN_USE = [
-        ("/Users/ttwj/Desktop/claude-screenshot-2.png", "claude-clarify"),
-        ("/Users/ttwj/Desktop/claude-screenshot-1.png", "claude-reason"),
-    ]
 
-    def detect_panel(a):
-        # bright = the light app panel; desktop is dark/purple.
-        bright = (a[:, :, 0] > 150) & (a[:, :, 1] > 150) & (a[:, :, 2] > 150)
-        cols = np.where(bright.mean(axis=0) > 0.30)[0]
-        c0, c1 = int(cols.min()), int(cols.max())
-        # rows: only inside the panel column band, so the URL bar / top bar
-        # (bright but narrow, or above the window) don't count. Take the tallest
-        # contiguous run of >50%-bright rows.
-        band = bright[:, c0 + 60 : c1 - 60].mean(axis=1) > 0.5
-        best = (0, -1)
-        s = None
-        for y, v in enumerate(band):
-            if v and s is None:
-                s = y
-            if (not v) and s is not None:
-                if y - 1 - s > best[1] - best[0]:
-                    best = (s, y - 1)
-                s = None
-        if s is not None and len(band) - 1 - s > best[1] - best[0]:
-            best = (s, len(band) - 1)
-        return c0, c1, best[0], best[1]
+def process_desktop(shot):
+    im = Image.open(shot["src"]).convert("RGB")
+    draw = ImageDraw.Draw(im)
+    fill = shot.get("mask_fill", (253, 253, 253))
+    for box in shot.get("masks", []):
+        draw.rectangle(box, fill=fill)
+    cw, ch = im.size
+    if cw > TARGET_W:
+        nh = round(ch * TARGET_W / cw)
+        im = im.resize((TARGET_W, nh), Image.LANCZOS)
+    out = os.path.join(OUT_DIR, shot["slug"] + ".png")
+    im.save(out, "PNG", optimize=True)
+    print(f"{shot['slug']:16s} {im.size[0]}x{im.size[1]}  <- {os.path.basename(shot['src'])}")
 
-    def process_in_use(src, slug):
-        im = Image.open(src).convert("RGB")
-        c0, c1, r0, r1 = detect_panel(np.asarray(im).astype(int))
-        t = 4  # trim the rounded-corner fringe against the dark desktop
-        im = im.crop((c0 + t, r0 + t, c1 - t, r1 - t))
-        cw, ch = im.size
-        if cw > TARGET_W:
-            nh = round(ch * TARGET_W / cw)
-            im = im.resize((TARGET_W, nh), Image.LANCZOS)
-        out = os.path.join(OUT_DIR, slug + ".png")
-        im.save(out, "PNG", optimize=True)
-        print(f"{slug:14s} {im.size[0]}x{im.size[1]}  <- {os.path.basename(src)}")
 
-    for src, slug in IN_USE:
-        if os.path.exists(src):
-            process_in_use(src, slug)
-        else:
-            print(f"{slug:14s} skipped (source not present: {src})")
-except ImportError:
-    print("numpy not available; skipped Claude-in-use shots")
+for shot in DESKTOP_SHOTS:
+    if os.path.exists(shot["src"]):
+        process_desktop(shot)
+    else:
+        print(f"{shot['slug']:16s} skipped (source not present: {shot['src']})")
 
 print("done")

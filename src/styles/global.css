@@ -670,110 +670,208 @@ h1.hero-h {
   display: none;
 }
 
-/* ---- Governance scrollytelling (attack storyline) ----
-   Dark section; the diagram is our own art (unlike the always-light shots). */
-.gov {
-  padding: 0;
+/* ---- Architecture hero (the animated centerpiece) ----
+   Dark section; the diagram is our own art (unlike the always-light shots).
+   A bold, benefit-led system drawing: any agent plugs into ONE governed VM
+   sandbox; everyday work flows, the risky moves are watched and recorded.
+   Motion (initArch) toggles .assembled / .lit / .watching / .blocked /
+   .drawn / .stamped as you scroll; the CSS below carries the resting look
+   for each, and the RM / ≤900px blocks force the final assembled state. */
+.arch {
+  padding-top: 96px;
+  padding-bottom: 0;
 }
-.gov-grid {
-  display: grid;
-  grid-template-columns: 1fr 1.05fr;
-  gap: 56px;
-  align-items: start;
+.arch-head {
+  max-width: 62ch;
 }
-.gov-stage {
+.arch-head .label {
+  color: var(--v-bright);
+}
+.arch-stage {
   position: relative;
   min-height: 100vh;
-  display: flex;
+  display: grid;
+  grid-template-columns: 1.55fr 0.95fr;
   align-items: center;
-  justify-content: center;
-  padding: 120px 0;
+  gap: 48px;
+  padding: 40px 0;
 }
-.gov-diagram {
-  display: flex;
-  flex-direction: column;
-  align-items: stretch;
-  gap: 0;
-  width: 100%;
-  max-width: 400px;
-}
-.gov-card {
+/* The drawing itself: agents · connector · the bold sandbox. */
+.arch-diagram {
   position: relative;
   display: grid;
-  grid-template-columns: auto 1fr;
-  grid-template-rows: auto auto;
-  column-gap: 14px;
+  grid-template-columns: auto 64px 1fr;
   align-items: center;
-  padding: 18px 20px;
+  gap: 0;
+}
+
+/* LEFT — the ANY AGENT socket the chips swap into. */
+.arch-agents {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  text-align: center;
+}
+.arch-zone-tag,
+.arch-sub {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  color: var(--void-2);
+}
+.arch-socket {
+  position: relative;
+  display: grid;
+  gap: 8px;
+  padding: 16px;
+  min-width: 168px;
+  border: 1px dashed var(--void-rule);
+  border-radius: 12px;
+  background: #0d1113;
+  transition: border-color 0.5s var(--e), box-shadow 0.5s var(--e);
+}
+.arch-socket.lit {
+  border-color: var(--v-bright);
+  box-shadow: 0 0 0 1px var(--v-bright), 0 0 40px -10px rgb(61 165 136 / 0.55);
+}
+.arch-chip {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12.5px;
+  letter-spacing: 0.02em;
+  color: #e9ece8;
+  padding: 9px 12px;
+  border: 1px solid var(--void-rule);
+  border-radius: 8px;
+  background: #10161a;
+}
+.arch-chip-ghost {
+  color: #6e7674;
+  border-style: dashed;
+  font-style: italic;
+}
+
+/* CONNECTOR agent → sandbox: a hairline that fills verdigris on scroll. */
+.arch-edge {
+  position: relative;
+  align-self: center;
+  height: 2px;
+  background: var(--void-rule);
+  overflow: visible;
+}
+.arch-edge::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: var(--v-bright);
+  transform: scaleX(var(--fill, 0));
+  transform-origin: left;
+  transition: transform 0.4s var(--e);
+}
+.arch-edge-label {
+  position: absolute;
+  top: -20px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9.5px;
+  letter-spacing: 0.12em;
+  color: var(--void-2);
+  white-space: nowrap;
+}
+
+/* CENTER — the bold governed sandbox boundary. The star of the drawing. */
+.arch-sandbox {
+  position: relative;
+  padding: 30px 26px 26px;
+  display: grid;
+  gap: 16px;
+}
+.arch-boundary {
+  position: absolute;
+  inset: 0;
+  border: 2px dashed var(--void-2);
+  border-radius: 16px;
+  opacity: 0.4;
+  transition: opacity 0.6s var(--e), border-color 0.6s var(--e), box-shadow 0.6s var(--e);
+  pointer-events: none;
+}
+.arch-boundary.drawn {
+  opacity: 1;
+  border-color: var(--v-bright);
+  box-shadow: inset 0 0 60px -30px rgb(61 165 136 / 0.5), 0 0 0 1px rgb(61 165 136 / 0.2);
+}
+.arch-corner {
+  position: absolute;
+  top: -10px;
+  left: 20px;
+  display: inline-flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 3px 10px;
+  background: var(--void);
+  font-size: 10.5px;
+  letter-spacing: 0.14em;
+  color: var(--v-bright);
+}
+.arch-corner-sub {
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  color: var(--void-2);
+}
+/* Nodes inside the boundary (running agent · watched paths · trail). */
+.arch-run,
+.arch-node {
+  position: relative;
+  display: grid;
+  gap: 3px;
+  padding: 13px 16px;
   border: 1px solid var(--void-rule);
   border-radius: 10px;
   background: #0d1113;
-  opacity: 0.34;
-  transition: opacity 0.5s var(--e), border-color 0.5s var(--e), box-shadow 0.5s var(--e),
-    transform 0.5s var(--e);
+  opacity: 0.4;
+  transition: opacity 0.5s var(--e), border-color 0.5s var(--e), box-shadow 0.5s var(--e);
 }
-.gov-card.lit {
+.arch-stage.assembled .arch-run,
+.arch-stage.assembled .arch-node {
+  opacity: 0.72;
+}
+.arch-run.lit,
+.arch-node.lit {
   opacity: 1;
   border-color: var(--v-bright);
-  box-shadow: 0 0 0 1px var(--v-bright), 0 0 34px -6px rgb(61 165 136 / 0.5);
+  box-shadow: 0 0 0 1px var(--v-bright), 0 0 34px -8px rgb(61 165 136 / 0.5);
 }
-.gov-card.blocked {
+.arch-node-watch.watching {
+  opacity: 1;
+  border-color: var(--amber);
+  box-shadow: 0 0 0 1px var(--amber), 0 0 30px -10px rgb(184 134 43 / 0.5);
+}
+.arch-node-watch.blocked {
   border-color: var(--oxide);
-  box-shadow: 0 0 0 1px var(--oxide), 0 0 34px -6px rgb(158 56 43 / 0.55);
+  box-shadow: 0 0 0 1px var(--oxide), 0 0 34px -6px rgb(196 88 74 / 0.55);
 }
-.gov-ico {
-  grid-row: 1 / 3;
-  width: 34px;
-  height: 34px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--void-2);
-  border: 1px solid var(--void-rule);
-  border-radius: 8px;
-  transition: color 0.5s var(--e), border-color 0.5s var(--e);
-}
-.gov-card.lit .gov-ico {
-  color: var(--v-bright);
-  border-color: var(--v-bright);
-}
-.gov-card.blocked .gov-ico {
-  color: var(--oxide);
-  border-color: var(--oxide);
-}
-.gov-ico svg {
-  width: 20px;
-  height: 20px;
-}
-.gov-label {
-  font-size: 12px;
+.arch-node-label {
+  font-size: 11px;
   letter-spacing: 0.12em;
   color: #e9ece8;
-  align-self: end;
 }
-.gov-sub,
-.gov-hash,
-.gov-sig {
-  grid-column: 2;
+.arch-node-sub {
   font-size: 10.5px;
   color: #9aa3a1;
-  align-self: start;
+  max-width: 40ch;
 }
-.gov-hash,
-.gov-sig {
-  font-family: 'JetBrains Mono', monospace;
-  letter-spacing: 0.04em;
+.arch-watched {
+  display: grid;
+  gap: 12px;
 }
-.gov-card.lit .gov-sig {
-  color: var(--v-bright);
-}
-/* The halt cap that flashes when the rogue action is blocked at policy. */
-.gov-halt {
+/* The oxide "stopped" cap on a watched path when a risky action is caught. */
+.arch-halt {
   position: absolute;
-  top: -11px;
-  right: 14px;
+  top: -10px;
+  right: 12px;
   font-family: 'JetBrains Mono', monospace;
-  font-size: 10px;
+  font-size: 9.5px;
   letter-spacing: 0.08em;
   color: #fff;
   background: var(--oxide);
@@ -783,81 +881,110 @@ h1.hero-h {
   transform: scale(0.8);
   transition: opacity 0.3s var(--e), transform 0.3s var(--e);
 }
-.gov-card.blocked .gov-halt {
+.arch-node-watch.blocked .arch-halt {
   opacity: 1;
   transform: none;
 }
-/* Vertical connectors between cards, with packets that ride down them. */
-.gov-link {
-  position: relative;
-  height: 46px;
-  margin: 0 auto;
-  width: 2px;
-  background: var(--void-rule);
-  overflow: visible;
+.arch-trail-row {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10.5px;
+  letter-spacing: 0.04em;
+  color: #9aa3a1;
+  transition: color 0.4s var(--e);
 }
-.gov-link::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: var(--v-bright);
-  transform: scaleY(var(--fill, 0));
-  transform-origin: top;
-  transition: transform 0.4s var(--e);
+.arch-trail-row.stamped {
+  color: var(--v-bright);
 }
-.pkt {
+/* Action packets that travel from the running agent on scroll. */
+.arch-flows {
   position: absolute;
-  left: 50%;
+  left: 22px;
+  top: 74px;
+  width: 0;
+  height: 0;
+}
+.arch-pkt {
+  position: absolute;
+  left: 0;
   top: 0;
   width: 12px;
   height: 12px;
   border-radius: 50%;
-  transform: translate(-50%, -50%);
+  z-index: 5;
   opacity: 0;
-  z-index: 4;
 }
-.pkt-good {
+.arch-pkt-agent {
+  background: #e9ece8;
+  box-shadow: 0 0 12px 2px rgb(233 236 232 / 0.6);
+}
+.arch-pkt-good {
   background: var(--v-bright);
   box-shadow: 0 0 14px 2px rgb(61 165 136 / 0.7);
 }
-.pkt-rogue {
+.arch-pkt-risk {
   background: var(--oxide);
-  box-shadow: 0 0 14px 2px rgb(158 56 43 / 0.7);
+  box-shadow: 0 0 14px 2px rgb(196 88 74 / 0.7);
 }
 
-/* The scrolling narrative rail beside the pinned diagram. */
-.gov-beats {
-  padding: 120px 0;
-}
-.gov-head {
-  margin-bottom: 30vh;
-}
-.gov-head .label {
-  color: var(--v-bright);
-}
-.gov-beat {
-  min-height: 62vh;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  opacity: 0.28;
-  transition: opacity 0.5s var(--e);
-}
-.gov-beat.lit {
-  opacity: 1;
-}
-.gov-beat .label {
-  color: var(--v-bright);
-}
-.gov-beat h3 {
-  margin: 12px 0 14px;
-  color: #e9ece8;
-}
-.gov-beat p {
-  color: #9aa3a1;
-  font-size: clamp(15px, 1.4vw, 18px);
-  max-width: 46ch;
+/* RIGHT — the annotation column carrying the plain-language governance copy. */
+.arch-notes {
+  list-style: none;
   margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 22px;
+}
+.arch-note {
+  opacity: 0.34;
+  padding-left: 16px;
+  border-left: 2px solid var(--void-rule);
+  transition: opacity 0.5s var(--e), border-color 0.5s var(--e);
+}
+.arch-note.lit {
+  opacity: 1;
+  border-color: var(--v-bright);
+}
+.arch-note .label {
+  color: var(--v-bright);
+  display: block;
+  margin-bottom: 6px;
+}
+.arch-note p {
+  margin: 0;
+  color: #9aa3a1;
+  font-size: clamp(14px, 1.15vw, 16px);
+  line-height: 1.5;
+}
+.arch-note strong {
+  color: #e9ece8;
+  font-weight: 500;
+}
+
+/* ---- Desktop-proof shots (the "it runs in a real VM" pair) ----
+   A wide, always-light card like .shot but without the faux browser chrome —
+   the Ubuntu desktop shows its own top bar and (for the browser shot) URL bar. */
+.shot-desktop {
+  margin: 44px 0 0;
+  border: 1px solid #e3e6e2;
+  border-radius: 12px;
+  overflow: hidden;
+  background: #fff;
+  box-shadow: 0 1px 0 rgb(0 0 0 / 0.02), 0 30px 70px -38px rgb(8 9 10 / 0.45);
+}
+.shot-desktop img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+.shot-desktop figcaption {
+  padding: 14px 20px 16px;
+  border-top: 1px solid #e3e6e2;
+  background: #f7f8f5;
+  font-size: 13px;
+  color: #4a524f;
+}
+.shot-desktop figcaption .mono {
+  color: #0c1f19;
 }
 
 /* ---- Scroll-progress hairline ---- */
@@ -967,26 +1094,75 @@ footer {
   .shot-callout {
     display: none;
   }
-  /* Governance stacks: diagram above, beats below, nothing pinned. */
-  .gov-grid {
+  /* Architecture stacks: diagram above, notes below, nothing pinned. The
+     pin is disabled on mobile in motion.ts; this is the static fallback. */
+  .arch-stage {
     grid-template-columns: 1fr;
-    gap: 0;
-  }
-  .gov-stage {
     min-height: auto;
-    padding: 72px 0 8px;
-    /* pin is disabled on mobile in motion.ts; this is the static fallback */
+    gap: 32px;
+    padding: 40px 0 8px;
   }
-  .gov-beats {
-    padding: 8px 0 72px;
+  .arch-diagram {
+    grid-template-columns: 1fr;
+    justify-items: center;
+    gap: 28px;
+    text-align: center;
   }
-  .gov-beat {
-    min-height: auto;
-    padding: 34px 0;
+  /* The agent→sandbox connector runs vertically when stacked. */
+  .arch-edge {
+    width: 2px;
+    height: 40px;
+  }
+  .arch-edge::after {
+    transform: scaleY(var(--fill, 1));
+    transform-origin: top;
+  }
+  .arch-edge-label {
+    top: 50%;
+    left: 12px;
+    transform: translateY(-50%);
+  }
+  .arch-sandbox {
+    text-align: left;
+    width: 100%;
+    max-width: 520px;
+  }
+  .arch-node-sub {
+    max-width: none;
+  }
+  .arch-flows {
+    display: none;
+  }
+  /* initArch early-returns below 901px, so JS never lights the diagram. Paint
+     the same final, fully-assembled static state the reduced-motion block uses:
+     boundary drawn, socket + running agent + trail lit, watched paths shown,
+     action packets hidden, notes all visible. The aria-label narrates the rest. */
+  .arch-socket {
+    border-color: var(--v-bright);
+  }
+  .arch-boundary {
+    opacity: 1;
+    border-color: var(--v-bright);
+  }
+  .arch-run,
+  .arch-node {
     opacity: 1;
   }
-  .gov-head {
-    margin-bottom: 8px;
+  .arch-run,
+  .arch-node-trail {
+    border-color: var(--v-bright);
+  }
+  .arch-halt {
+    display: none;
+  }
+  .arch-pkt-agent {
+    display: none;
+  }
+  .arch-trail-row {
+    opacity: 1;
+  }
+  .arch-note {
+    opacity: 1;
   }
 }
 @media (max-width: 380px) {
@@ -1029,31 +1205,36 @@ footer {
     opacity: 1 !important;
     visibility: visible !important;
   }
-  /* Governance: render the final, fully-lit assembled state — every card lit,
-     connectors filled, packets hidden, nothing pinned. The aria-label carries
-     the causal story regardless. */
-  .gov-stage {
+  /* Architecture: render the final, fully-assembled state — boundary drawn,
+     socket + running agent + trail lit, watched paths shown (not blocked),
+     action packets hidden, notes all visible, nothing pinned. The aria-label
+     carries the full causal story regardless of motion. */
+  .arch-stage {
     min-height: auto;
-    padding: 72px 0;
+    padding: 40px 0;
   }
-  .gov-card {
+  .arch-socket {
+    border-color: var(--v-bright) !important;
+  }
+  .arch-boundary {
     opacity: 1 !important;
     border-color: var(--v-bright) !important;
   }
-  .gov-card .gov-ico {
-    color: var(--v-bright) !important;
+  .arch-run,
+  .arch-node {
+    opacity: 1 !important;
+  }
+  .arch-run.lit,
+  .arch-node-trail {
     border-color: var(--v-bright) !important;
   }
-  .gov-halt {
+  .arch-halt {
     display: none;
   }
-  .gov-link::after {
-    transform: scaleY(1) !important;
-  }
-  .pkt {
+  .arch-pkt {
     display: none;
   }
-  .gov-beat {
+  .arch-note {
     opacity: 1 !important;
   }
   .scrollbar {
