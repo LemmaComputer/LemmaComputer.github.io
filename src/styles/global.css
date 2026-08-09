@@ -100,6 +100,193 @@ p {
   margin-left: 0.2em;
 }
 
+/* ---- Backdrop artifact field ----
+   Three fixed depth planes of drifting governance artifacts behind the whole
+   page (initArtifacts injects them; parallax + idle-rotate + velocity-blur in
+   motion.ts). z-index:0 keeps them behind every section (z:1+) — they show
+   through the light surfaces (hero, gaps, footer) and are covered by the dark
+   .void panels, the way a layered scene should read. Faint ink on this light
+   surface; --void-2 base reads on both light and toggled-dark canvases. */
+#artifacts {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+.depth {
+  position: absolute;
+  inset: 0;
+  will-change: transform;
+}
+.af {
+  position: absolute;
+  font-family: 'JetBrains Mono', monospace;
+  color: var(--void-2);
+  white-space: nowrap;
+  transform: translate(-50%, -50%);
+  user-select: none;
+}
+.af.serifglyph {
+  font-family: 'Newsreader', Georgia, serif;
+}
+.af.ok {
+  color: var(--verdigris);
+}
+.af.amb {
+  color: var(--amber);
+}
+.af svg {
+  display: block;
+}
+.af svg circle {
+  fill: currentColor;
+}
+.af svg line,
+.af svg path,
+.af svg rect {
+  stroke: currentColor;
+  stroke-width: 0.8;
+  fill: none;
+}
+
+/* ---- Ledger ticker ----
+   A live governed-trail marquee pinned to the bottom of every screen. Reads
+   as a system status bar even on this light surface: a dark translucent rail,
+   monospace, with signed hashes tinted --v-bright. JS fills #flow (doubled)
+   and the marquee slides it -50% forever; RM freezes it (animation:none). */
+#strip {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 26px;
+  z-index: 9990;
+  overflow: hidden;
+  pointer-events: none;
+  display: flex;
+  align-items: center;
+  background: color-mix(in srgb, var(--void) 82%, transparent);
+  border-top: 1px solid color-mix(in srgb, var(--v-bright) 22%, transparent);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+.flow {
+  display: inline-flex;
+  flex: none;
+  white-space: nowrap;
+  will-change: transform;
+  animation: flow 62s linear infinite;
+}
+#strip span {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10.5px;
+  letter-spacing: 0.02em;
+  color: color-mix(in srgb, #e9ece8 62%, transparent);
+  padding: 0 1.4em;
+  flex: none;
+}
+#strip b {
+  font-weight: 500;
+  color: var(--v-bright);
+}
+@keyframes flow {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+/* ---- Objection wall ----
+   A tall section (#wall) with a sticky full-viewport stage. Two setup lines
+   (.wl) rise, dim; scattered objections (.q, JS-injected) fade in from random;
+   the big question lands; everything dims to the answer (.q-answer). Ported
+   from the LemmaResearch wall, recolored mineral. On this dark .void section
+   the questions read as faint chalk; the answer is verdigris. Reduced motion /
+   mobile fall back to a static answer (handled in the RM + mobile blocks). */
+.wall-stage {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  overflow: hidden;
+}
+.q-field {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 2;
+}
+.q {
+  position: absolute;
+  opacity: 0;
+  color: color-mix(in srgb, #e9ece8 44%, transparent);
+  white-space: nowrap;
+  transform: translate(-50%, -50%);
+}
+.q.m {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: clamp(9.5px, 1.05vw, 12px);
+}
+.q.s {
+  font-family: 'Newsreader', Georgia, serif;
+  font-style: italic;
+  font-size: clamp(13px, 1.65vw, 19px);
+}
+.q.n {
+  font-size: clamp(11px, 1.2vw, 14px);
+}
+.q.big {
+  font-size: clamp(17px, 2.6vw, 30px);
+  color: color-mix(in srgb, #e9ece8 78%, transparent);
+  font-family: 'Newsreader', Georgia, serif;
+  font-style: italic;
+  white-space: normal;
+  width: min(88vw, 22ch);
+  text-align: center;
+}
+.wall-lines {
+  position: relative;
+  z-index: 4;
+}
+.wl {
+  opacity: 0;
+}
+.q-answer {
+  position: absolute;
+  z-index: 6;
+  opacity: 0;
+  width: 100%;
+  left: 0;
+  text-align: center;
+  padding: 0 24px;
+}
+.q-answer .a1 {
+  font-family: 'Newsreader', Georgia, serif;
+  font-size: clamp(38px, 7.4vw, 92px);
+  color: var(--v-bright);
+  font-weight: 300;
+  letter-spacing: -0.03em;
+  line-height: 1.02;
+}
+.after-wall {
+  max-width: 48ch;
+  margin: 22px auto 0;
+  color: color-mix(in srgb, #e9ece8 64%, transparent);
+  font-size: clamp(14px, 1.5vw, 18px);
+  line-height: 1.5;
+}
+.aw-echo {
+  color: color-mix(in srgb, #e9ece8 88%, transparent);
+  font-style: italic;
+  white-space: nowrap;
+}
+
 /* ---- Nav ---- */
 .nav {
   position: fixed;
@@ -350,6 +537,32 @@ h1.hero-h {
   width: 0.34em;
   height: 0.34em;
   vertical-align: 0.06em;
+}
+/* Draw-on signature underline beneath "One governed computer." A single
+   hand-weighted stroke that draws left→right on load, sequenced after the word
+   rise (motion.ts). Rendered as a centered block just under the second line —
+   deliberately kept OUT of .h-two, which is overflow:hidden for the word-rise
+   clip, so the stroke is never clipped. Width is capped so it reads as a mark
+   under the line, not an edge-to-edge rule; the negative margin tucks it up
+   under the descenders. Decorative (aria-hidden); the H1 text is authoritative.
+   The DRAWN state (stroke-dashoffset:0) ships as the default so reduced-motion
+   and no-JS both show the finished mark — GSAP resets the offset then tweens. */
+.hero-sig {
+  display: block;
+  width: min(360px, 42vw);
+  height: 0.2em;
+  margin: -0.08em auto 0;
+  overflow: visible;
+  pointer-events: none;
+}
+.hero-sig-line {
+  fill: none;
+  stroke: var(--v-bright);
+  stroke-width: 2.5;
+  stroke-linecap: round;
+  vector-effect: non-scaling-stroke;
+  stroke-dasharray: 320;
+  stroke-dashoffset: 0;
 }
 
 /* ---- Statement + proof rhythm ---- */
@@ -678,6 +891,13 @@ h1.hero-h {
    .drawn / .stamped as you scroll; the CSS below carries the resting look
    for each, and the RM / ≤900px blocks force the final assembled state. */
 .arch {
+  /* Neutralize the .panel flex-centering + 100vh min-height: the head must
+     sit at the natural top and scroll away, leaving the .arch-stage below it
+     as the sole pinned, self-centering region (see .arch-stage: height:100vh).
+     Without this the head+stage were centered inside a taller panel box, which
+     shoved the pinned diagram below the fold. */
+  display: block;
+  min-height: 0;
   padding-top: 96px;
   padding-bottom: 0;
 }
@@ -689,12 +909,16 @@ h1.hero-h {
 }
 .arch-stage {
   position: relative;
-  min-height: 100vh;
+  /* Exactly one viewport tall + centered → the pinned diagram lands in the true
+     vertical middle of the fold (single centering context; the panel no longer
+     centers, see .arch above). Was min-height:100vh, which stacked a second
+     centering box and pushed the diagram below the fold. */
+  height: 100vh;
   display: grid;
   grid-template-columns: 1.55fr 0.95fr;
   align-items: center;
   gap: 48px;
-  padding: 40px 0;
+  padding: 0;
 }
 /* The drawing itself: agents · connector · the bold sandbox. */
 .arch-diagram {
@@ -1246,6 +1470,34 @@ footer {
   }
   .scrollbar {
     display: none;
+  }
+  /* Objection wall: no scatter under reduced motion. Show the two setup lines
+     and the answer as a static statement; keep the floating .q objections
+     hidden (initWall injects them but early-returns before the timeline, so
+     they never reveal — this pins that guarantee in CSS too). The stage stops
+     being sticky so the section reads as one calm screen in normal flow. */
+  #wall {
+    height: auto !important;
+  }
+  .wall-stage {
+    position: static;
+    height: auto;
+    min-height: 60vh;
+    flex-direction: column;
+    gap: 26px;
+    padding: 96px 0;
+  }
+  .q-field {
+    display: none !important;
+  }
+  .wl {
+    opacity: 1 !important;
+    transform: none !important;
+  }
+  .q-answer {
+    position: static;
+    opacity: 1 !important;
+    transform: none !important;
   }
 }
 :focus-visible {

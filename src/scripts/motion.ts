@@ -65,6 +65,23 @@ if (g && ST) {
       stagger: 0.07,
       delay: 0.1,
     });
+
+    /* SIGNATURE DRAW-ON — a single verdigris stroke draws left→right under
+       "One governed computer." CSS ships the drawn state (offset 0), so this
+       resets the offset to the full dash length, then tweens it back to 0. The
+       draw starts at 1.15s — as the last word's rise (starts ~0.38s, ends
+       ~1.48s) is settling — so the underline reads as the closing stroke of one
+       gesture, not a separate beat. Only runs with motion on (block is !RM). */
+    const sig = heroH.querySelector('.hero-sig-line') as SVGElement | null;
+    if (sig) {
+      g.set(sig, { strokeDashoffset: 320 });
+      g.to(sig, {
+        strokeDashoffset: 0,
+        duration: 0.9,
+        ease: 'power2.inOut',
+        delay: 1.15,
+      });
+    }
   }
 
   /* SCROLL-PROGRESS HAIRLINE — scaleX tracks document scroll. */
@@ -323,9 +340,13 @@ if (g && ST) {
     g.set(chips, { autoAlpha: 0, y: -14 });
     g.set([good, risk, pktAgent], { autoAlpha: 0 });
 
+    // Pin the STAGE from its own top (not the section's): the head scrolls
+    // away first, then the diagram pins alone, centered, filling the fold.
+    // Pinning from the section top froze the stage far below the fold (head +
+    // nav + padding pushed it down), leaving a ~217px dead gap above it.
     const tl = g.timeline({
       scrollTrigger: {
-        trigger: section,
+        trigger: stage,
         start: 'top top',
         end: '+=360%',
         pin: stage,
@@ -447,8 +468,214 @@ if (g && ST) {
   }
 
   /* ------------------------------------------------------------------ *
+   * BACKDROP ARTIFACT FIELD — three fixed depth planes of drifting
+   * governance artifacts (signed hashes, costs, timestamps, verdict glyphs,
+   * tiny socket/lock/shield motifs). Ported from the LemmaLabs build and
+   * retuned for this light surface: ~30% fewer glyphs, a gentler blur cap
+   * (~2px), and mineral tinting. Planes parallax at three rates, each glyph
+   * idle-rotates, and the whole field motion-blurs with scroll velocity then
+   * settles. Skipped entirely under reduced motion. On coarse pointers /
+   * mobile we keep a faint static-drift set (parallax only — no blur, no
+   * per-glyph rotation) for battery + jank.
+   * ------------------------------------------------------------------ */
+  const hex = '0123456789abcdef';
+  const rnd = (n: number) => Array.from({ length: n }, () => hex[(Math.random() * 16) | 0]).join('');
+  const p2 = (n: number) => String(n).padStart(2, '0');
+  const now = () => {
+    const d = new Date(Date.now() - Math.random() * 9e6);
+    return p2(d.getHours()) + ':' + p2(d.getMinutes()) + ':' + p2(d.getSeconds());
+  };
+  // Verdict / proof glyphs — signed (✓), pending (⧗), blocked (⨯) plus the
+  // logic marks the LemmaLabs field uses (∎ QED, ⊢ turnstile).
+  const GLYPH = ['✓', '⧗', '⨯', '∎', '⊢', '∴'];
+  // A few tiny governed motifs drawn inline: socket ring, padlock, shield.
+  const MOTIF = [
+    '<svg width="34" height="34" viewBox="0 0 34 34"><circle cx="17" cy="17" r="11"/><circle cx="17" cy="17" r="3.4"/></svg>',
+    '<svg width="30" height="34" viewBox="0 0 30 34"><rect x="6" y="14" width="18" height="14" rx="2.5"/><path d="M10 14v-4a5 5 0 0 1 10 0v4"/></svg>',
+    '<svg width="30" height="36" viewBox="0 0 30 36"><path d="M15 3l11 4v9c0 8-5 13-11 16-6-3-11-8-11-16V7z"/><path d="M10 18l4 4 7-8"/></svg>',
+  ];
+
+  function buildArtifacts(host: HTMLElement | null, count: number, size: [number, number], op: [number, number]) {
+    if (!host) return;
+    for (let n = 0; n < count; n++) {
+      const el = document.createElement('div');
+      el.className = 'af';
+      const r = Math.random();
+      if (r < 0.4) {
+        // proof glyph (serif) — a slice tinted verdigris/amber like the ledger.
+        el.textContent = GLYPH[(Math.random() * GLYPH.length) | 0]!;
+        el.classList.add('serifglyph');
+        const t = Math.random();
+        if (t < 0.16) el.classList.add('ok');
+        else if (t < 0.24) el.classList.add('amb');
+      } else if (r < 0.62) {
+        // signed hash fragment
+        el.textContent = 'did:key:z' + rnd(6);
+      } else if (r < 0.78) {
+        // cost chip
+        el.textContent = 'S$' + (Math.random() * 0.9 + 0.05).toFixed(2);
+      } else if (r < 0.9) {
+        // timestamp
+        el.textContent = now();
+      } else {
+        // a governed motif (socket / lock / shield)
+        el.innerHTML = MOTIF[(Math.random() * MOTIF.length) | 0]!;
+      }
+      const sz = size[0] + Math.random() * (size[1] - size[0]);
+      el.style.fontSize = sz + 'px';
+      el.style.left = Math.random() * 104 - 2 + '%';
+      el.style.top = Math.random() * 190 - 45 + '%';
+      el.style.opacity = (op[0] + Math.random() * (op[1] - op[0])).toFixed(3);
+      el.style.transform = 'translate(-50%,-50%) rotate(' + (Math.random() * 30 - 15).toFixed(1) + 'deg)';
+      el.dataset.rot = (Math.random() * 24 - 12).toFixed(1);
+      host.appendChild(el);
+    }
+  }
+
+  function initArtifacts() {
+    if (RM) return; // no field at all under reduced motion
+    const d1 = $('d1');
+    const d2 = $('d2');
+    const d3 = $('d3');
+    const MOB = !DESKTOP;
+    // Restrained counts on this light surface (ref used 11/11/8): 8/8/6 desktop.
+    buildArtifacts(d1, MOB ? 3 : 8, MOB ? [9, 13] : [11, 19], [0.05, 0.085]);
+    buildArtifacts(d2, MOB ? 3 : 8, MOB ? [11, 17] : [15, 27], [0.055, 0.1]);
+    buildArtifacts(d3, MOB ? 2 : 6, MOB ? [15, 23] : [22, 40], [0.06, 0.12]);
+
+    // Three depth rates → parallax. Scrub-linked to whole-page scroll.
+    ([[d1, 0.14], [d2, 0.34], [d3, 0.62]] as [HTMLElement | null, number][]).forEach((pair) => {
+      if (!pair[0]) return;
+      g.to(pair[0], {
+        y: () => -(document.body.scrollHeight - innerHeight) * pair[1],
+        ease: 'none',
+        scrollTrigger: { start: 0, end: 'max', scrub: true, invalidateOnRefresh: true },
+      });
+    });
+
+    // Idle per-glyph rotation + velocity-blur are desktop/fine only.
+    if (FINE && DESKTOP) {
+      qsa('.af').forEach((el) => {
+        g.to(el, { rotate: '+=' + el.dataset.rot, ease: 'none', scrollTrigger: { start: 0, end: 'max', scrub: 1.4 } });
+      });
+      const field = $('artifacts');
+      if (field) {
+        let t: number;
+        ST.create({
+          start: 0,
+          end: 'max',
+          onUpdate: (self: any) => {
+            // gentler cap than the ref (2px vs 3px) — the light surface shows more.
+            const v = Math.min(Math.abs(self.getVelocity()) / 440, 2);
+            g.set(field, { filter: 'blur(' + v.toFixed(2) + 'px)' });
+            clearTimeout(t);
+            t = window.setTimeout(() => {
+              g.to(field, { filter: 'blur(0px)', duration: 0.6, ease: 'sine.out' });
+            }, 90);
+          },
+        });
+      }
+    }
+  }
+
+  /* ------------------------------------------------------------------ *
+   * LEDGER TICKER — a live governed-trail marquee pinned to the bottom.
+   * CSS animates the scroll (@keyframes flow); JS just fills + refreshes the
+   * content. Paused under reduced motion (CSS sets animation:none there).
+   * ------------------------------------------------------------------ */
+  function initTicker() {
+    const flow = $('flow');
+    if (!flow) return;
+    const ACTS = [
+      'action signed', 'scope checked', 'egress denied', 'approval recorded',
+      'credential rotated', 'record verified', 'policy re-checked',
+    ];
+    const items = () =>
+      Array.from({ length: 16 }, () =>
+        '<span>' + now() + ' · ' + ACTS[(Math.random() * ACTS.length) | 0]! + ' · <b>' + rnd(10) + '</b></span>'
+      ).join('');
+    flow.innerHTML = items() + items(); // doubled → seamless -50% marquee loop
+    if (!RM) setInterval(() => { flow.innerHTML = items() + items(); }, 48000);
+  }
+
+  /* ------------------------------------------------------------------ *
+   * OBJECTION WALL — pinned scrub. The two setup lines rise, dim; the
+   * questions every security team asks scatter in from random; the big
+   * question lands; all dim; the answer resolves. Idle-drift per question
+   * (desktop+fine only). Under reduced motion we skip the whole timeline and
+   * the CSS override shows the setup lines + answer statically instead.
+   * Ported from the LemmaResearch wall, re-storied to the governed computer.
+   * ------------------------------------------------------------------ */
+  function initWall() {
+    const qField = $('qField');
+    const wl1 = $('wl1');
+    const wl2 = $('wl2');
+    const qAns = $('qAns');
+    if (!qField || !wl1 || !wl2 || !qAns) return;
+    const MOB = !DESKTOP;
+
+    // [text, kind] — kind sets the type treatment (m = mono, s = serif italic,
+    // n = plain). The questions a CISO/CIO actually asks about agent actions.
+    const QS: [string, string][] = [
+      ['Which agent touched production?', 's'], ['Was that inside policy?', 'n'],
+      ['Who approved the egress?', 'm'], ['Can we prove it to the auditor?', 's'],
+      ['What did that run cost us?', 'n'], ['Which identity signed it?', 'm'],
+      ['Did a human review this?', 's'], ['Can we undo what it did?', 'n'],
+      ['Where did that data go?', 'm'], ['Is this within the scope we granted?', 's'],
+      ['Why did it choose this action?', 'n'], ['Which model made the call?', 'm'],
+      ['What if it’s wrong and nobody catches it?', 's'], ['Who is watching the tokens?', 'm'],
+      ['Will this hold up in a review?', 'n'],
+    ];
+    const POS = [[15, 18], [79, 15], [25, 76], [86, 70], [10, 46], [63, 9], [38, 90], [90, 38], [19, 63], [71, 84], [7, 85], [53, 20], [33, 36], [81, 53], [46, 68]];
+    const MPOS = [[26, 14], [74, 22], [22, 80], [78, 74], [16, 50], [60, 9], [42, 90], [84, 42]];
+    const useQ = MOB ? QS.slice(0, 8) : QS;
+    const useP = MOB ? MPOS : POS;
+    useQ.forEach((item, n) => {
+      const d = document.createElement('div');
+      d.className = 'q ' + item[1];
+      d.textContent = item[0];
+      d.style.left = useP[n]![0] + '%';
+      d.style.top = useP[n]![1] + '%';
+      qField.appendChild(d);
+    });
+    const bigQ = document.createElement('div');
+    bigQ.className = 'q big';
+    bigQ.textContent = 'Can you answer for everything your agents do?';
+    bigQ.style.left = '50%';
+    bigQ.style.top = '50%';
+    qField.appendChild(bigQ);
+
+    if (RM) return; // static setup-lines + answer come from the CSS RM override
+
+    const qEls = qsa('.q:not(.big)', qField);
+    g.timeline({ scrollTrigger: { trigger: '#wall', start: 'top top', end: 'bottom bottom', scrub: 0.7 } })
+      .to(wl1, { opacity: 1, duration: 0.5 })
+      .to(wl2, { opacity: 1, duration: 0.5 }, '+=.3')
+      .to([wl1, wl2], { opacity: 0.12, y: -28, duration: 0.8 }, '+=.5')
+      .to(qEls, { opacity: 1, duration: 0.5, stagger: { each: 0.11, from: 'random' } }, '-=.6')
+      .to(bigQ, { opacity: 1, duration: 0.6 }, '+=.2')
+      .to(qEls, { opacity: 0.1, duration: 0.5 }, '+=.4')
+      .to(bigQ, { opacity: 0.1, duration: 0.5 }, '<')
+      .to([wl1, wl2], { opacity: 0, duration: 0.5 }, '<') // clear the setup lines so the answer stands alone
+      .to(qAns, { opacity: 1, duration: 0.7 }, '-=.2')
+      .to(qEls.concat([bigQ]), { opacity: 0, duration: 0.6 }, '+=.4');
+
+    // Idle drift — each question breathes on its own cadence (desktop+fine).
+    if (FINE && DESKTOP)
+      qEls.forEach((el, n) => {
+        g.to(el, {
+          y: '+=' + (n % 2 ? 13 : -13), x: '+=' + (n % 3 ? 7 : -7),
+          duration: 5 + (n % 4), repeat: -1, yoyo: true, ease: 'sine.inOut', delay: n * 0.14,
+        });
+      });
+  }
+
+  /* ------------------------------------------------------------------ *
    * INIT + ScrollTrigger robustness
    * ------------------------------------------------------------------ */
+  initArtifacts();
+  initTicker();
+  initWall();
   initDeck();
   initArch();
   initArchMobile();

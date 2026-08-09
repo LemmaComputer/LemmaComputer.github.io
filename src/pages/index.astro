@@ -112,6 +112,19 @@ const deckShots: {
 ---
 
 <BaseLayout>
+  {/* Fixed backdrop: three depth planes of drifting governance artifacts
+      (signed hashes, costs, timestamps, verdict glyphs, tiny socket/lock/shield
+      motifs). Injected + parallaxed + velocity-blurred by initArtifacts() in
+      motion.ts. Purely decorative, behind everything (z-index:0), and absent
+      under reduced motion. Faint ink-on-paper on this light surface. */}
+  <div id="artifacts" aria-hidden="true">
+    <div class="depth" id="d1"></div><div class="depth" id="d2"></div><div class="depth" id="d3"></div>
+  </div>
+
+  {/* Live governed-trail ticker pinned to the bottom edge (initTicker). A
+      running record of signed actions — decorative, paused under reduced motion. */}
+  <div id="strip" aria-hidden="true"><div class="flow" id="flow"></div></div>
+
   {/* Scroll-progress hairline — decorative, driven by ScrollTrigger. */}
   <div class="scrollbar" id="scrollbar" aria-hidden="true"></div>
 
@@ -144,6 +157,13 @@ const deckShots: {
               class="w">computer.</span
             ><span class="qed"></span></span
           >
+          <!-- draw-on signature underline; a centered block just beneath the
+               second line. Kept OUT of .h-two (which is overflow:hidden for the
+               word-rise clip) so the stroke is never clipped. Decorative — the
+               H1 text above is authoritative. -->
+          <svg class="hero-sig" viewBox="0 0 300 12" fill="none" aria-hidden="true" preserveAspectRatio="none"
+            ><path class="hero-sig-line" d="M2 8 C 70 4, 150 9, 230 6 S 292 6, 298 2" /></svg
+          >
         </h1>
         <p class="lede" data-r style="margin-top:28px">
           Run any AI agent you want — Claude, Codex, or Hermes — on a computer your
@@ -169,6 +189,34 @@ const deckShots: {
             { x: 84, y: 43, text: 'policy · verified', gutter: 'r' },
           ]}
         />
+      </div>
+    </section>
+
+    <!-- 1.5 · THE OBJECTION WALL — the emotional turn ---------------------- -->
+    <!-- A pinned screen: the questions every CISO/CIO asks about agents scatter
+         across the field, resolve into the one that matters, then answer to the
+         product's own mechanism — the Trail — and land on the promise. Ported
+         from the LemmaResearch question wall (initWall in motion.ts drives the
+         scrub timeline + idle drift). The .q objections are JS-injected. Under
+         reduced motion / narrow screens the CSS shows the setup lines + the
+         final answer statically (no scatter). The payoff reuses the locked
+         "One governed computer." string as a quiet echo beneath the answer;
+         rendered in a span, not a page heading, so the single-heading QA
+         contract on the hero stays intact. -->
+    <section id="wall" class="void" style="height:340vh" aria-label="The questions every security team asks about AI agents — and the answer.">
+      <div class="wall-stage">
+        <div class="q-field" id="qField" aria-hidden="true"></div>
+        <div class="wall-lines wrap">
+          <h2 class="serif t-l wl" id="wl1" style="margin-bottom:6px">Agents aren't held back by capability.</h2>
+          <h2 class="serif t-l wl" id="wl2" style="color:var(--v-bright)">They're held back by everything you can't answer for.</h2>
+        </div>
+        <div class="q-answer" id="qAns">
+          <div class="a1">Every action, on the record.</div>
+          <p class="after-wall">
+            Every command, every file, every dollar — signed to a governed identity and
+            written to a Trail you can hand an auditor. <span class="aw-echo">One governed computer.</span>
+          </p>
+        </div>
       </div>
     </section>
 
@@ -471,7 +519,7 @@ const deckShots: {
       <footer>
         <div class="wrap">
           <div class="foot">
-            <div>
+            <div data-r>
               <span class="mono">LEMMACOMPUTER<span class="qed"></span></span>
               <p class="ghost-note">
                 LemmaComputer is a product of LemmaLabs. Open source — the interface
@@ -479,7 +527,7 @@ const deckShots: {
                 commitment to features or availability.
               </p>
             </div>
-            <div class="mono">{site.productHost}</div>
+            <div class="mono" data-r>{site.productHost}</div>
           </div>
         </div>
       </footer>
