@@ -1,0 +1,34 @@
+:root {
+  color-scheme: light;
+  --ink: #15181a;
+  --graphite: #5c6462;
+  --rule: #d6dad6;
+  --chalk: #f3f5f2;
+  --paper: #fff;
+  --verdigris: #1e6b57;
+  --amber: #b8862b;
+  --oxide: #9e382b;
+  --void: #08090a;
+  --void-2: #6e7674;
+  --void-rule: #1b1f21;
+  --v-bright: #3da588;
+  --canvas: var(--chalk);
+  --text: var(--ink);
+  --text-2: var(--graphite);
+  --hairline: var(--rule);
+  --glow: rgb(30 107 87 / 0.1);
+  --e: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+[data-theme='dark'] {
+  color-scheme: dark;
+  --canvas: #0d0f10;
+  --paper: #16191b;
+  --text: #e9ece8;
+  --text-2: #8a9290;
+  --hairline: #262b2c;
+  --verdigris: #3da588;
+  --amber: #d8a441;
+  --oxide: #c4584a;
+  --glow: rgb(61 165 136 / 0.14);
+}

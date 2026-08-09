@@ -1,0 +1,21 @@
+node_modules/
+dist/
+.astro/
+.DS_Store
+npm-debug.log*
+
+# Local tooling & editor state — not for the public repo
+.claude/
+.playwright-mcp/
+
+# QA screenshots (generated during review). The committed product shots under
+# public/shots/ are re-allowed below.
+*.jpeg
+*.jpg
+*.png
+!public/**/*.png
+!public/**/*.jpg
+!src/**/*.png
+
+# Old git history backup — never publish
+.git.backup-*/

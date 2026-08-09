@@ -1,0 +1,305 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Shot from '../components/Shot.astro';
+import { site } from '../config/site';
+
+// Shot intrinsic dimensions (post-crop, from the pipeline) — passed through so
+// the browser reserves space and nothing shifts as images lazy-load.
+const dims = {
+  workspaces: { w: 1600, h: 1030 },
+  agents: { w: 1600, h: 1039 },
+  access: { w: 1600, h: 1017 },
+  firewall: { w: 1600, h: 1037 },
+  approvals: { w: 1600, h: 1031 },
+  trail: { w: 1600, h: 1039 },
+  schedules: { w: 1600, h: 1031 },
+};
+---
+
+<BaseLayout>
+  <!-- NAV — same fixed, difference-blend bar as LemmaResearch; frosts on scroll. -->
+  <nav class="nav" id="nav">
+    <a class="mark" href="#top">LEMMACOMPUTER<span class="qed"></span></a>
+    <div class="nav-r">
+      <a class="lnk" href="#agents">AGENTS</a>
+      <a class="lnk" href="#computer">COMPUTER</a>
+      <a class="lnk" href="#governance">GOVERNANCE</a>
+      <button class="tgl" id="tgl" type="button" aria-label="Toggle colour theme"></button>
+    </div>
+  </nav>
+
+  <main id="top">
+    <!-- 1 · HERO ------------------------------------------------------------ -->
+    <section class="panel center">
+      <div class="wrap">
+        <div class="hero-mark" data-r>
+          <span class="mark-big">LEMMACOMPUTER<span class="qed"></span></span>
+        </div>
+        <h1 class="serif t-hero hero-h" data-r>
+          Any agent.
+          <span class="h-two">One governed computer.<span class="qed"></span></span>
+        </h1>
+        <p class="lede" data-r style="margin-top:28px">
+          Bring the AI agent your team already wants — Claude, Codex, Hermes — onto
+          one managed computer. Each runs inside a policy-checked workspace, behind
+          an egress firewall, with tool approvals and a signed trail. Enterprise
+          freedom to choose, without losing control.
+        </p>
+        <div class="cta-row" data-r>
+          <a class="btn btn-p" href={site.requestAccessHref}>Request access</a>
+          <a class="btn btn-g" href="#agents">See how it works</a>
+        </div>
+        <Shot
+          src="workspaces.png"
+          alt="The LemmaComputer dashboard listing running workspaces — My Claude and My Hermes — each showing its apps, agents, model routing, and a verified policy version."
+          width={dims.workspaces.w}
+          height={dims.workspaces.h}
+          eager={true}
+          caption="Your workspaces — apps, agents, model, and policy, per workspace"
+          callouts={[
+            { x: 62, y: 43, text: 'governed routing' },
+            { x: 84, y: 43, text: 'policy · verified' },
+          ]}
+        />
+      </div>
+    </section>
+
+    <!-- 2 · THE TENSION (type only) ---------------------------------------- -->
+    <section class="panel center void" id="tension">
+      <div class="wrap">
+        <p class="label" data-r>THE TRADE-OFF EVERYONE MAKES</p>
+        <h2 class="serif t-xl" data-r style="margin-top:18px">
+          Pick any agent, or keep control.<br />You shouldn't have to choose.
+        </h2>
+        <p class="lede" data-r style="margin-top:24px">
+          Let people run whatever agent they like and shadow AI spreads across
+          unmanaged machines. Lock everything down and the work moves somewhere you
+          can't see. LemmaComputer resolves the tension: any agent is welcome, but
+          it only ever acts through a workspace you govern.
+        </p>
+      </div>
+    </section>
+
+    <!-- 3 · BRING YOUR OWN AGENT ------------------------------------------- -->
+    <section class="panel" id="agents">
+      <div class="wrap">
+        <div class="sec-head" data-r>
+          <p class="label">01 · BRING YOUR OWN AGENT</p>
+          <h2 class="serif t-l">Every agent gets its own governed identity.</h2>
+          <p class="lede">
+            Enable Claude, OpenAI, or Hermes — desktop or CLI. Each enabled client
+            receives a separate governed identity, model grant, and tool scope, so
+            you can adopt a new agent without re-architecting trust. Clients that
+            aren't in the approved workspace image simply can't be selected yet.
+          </p>
+        </div>
+
+        <div class="modes" data-r aria-hidden="true">
+          <span class="mode-pill">Auto</span>
+          <span class="mode-pill">Lite</span>
+          <span class="mode-pill">Balanced</span>
+          <span class="mode-pill">Pro</span>
+        </div>
+
+        <Shot
+          src="agents.png"
+          alt="The AI agents panel: Claude, OpenAI, and Hermes client options, each described as routed through its own governed LemmaComputer identity, plus a default model mode selector — Auto, Lite, Balanced, Pro."
+          width={dims.agents.w}
+          height={dims.agents.h}
+          caption="AI agents — a separate governed identity, model grant, and tool scope per client"
+          callouts={[
+            { x: 15, y: 24, text: 'Claude' },
+            { x: 50, y: 24, text: 'OpenAI · coming soon' },
+            { x: 84, y: 40, text: 'Hermes · governed client' },
+          ]}
+        />
+      </div>
+    </section>
+
+    <!-- 4 · IT'S A REAL COMPUTER ------------------------------------------- -->
+    <section class="panel" id="computer">
+      <div class="wrap">
+        <div class="sec-head" data-r>
+          <p class="label">02 · IT'S A REAL COMPUTER</p>
+          <h2 class="serif t-l">A managed desktop, not just a chat box.</h2>
+          <p class="lede">
+            Choose a Managed workspace — a restricted, organization-managed
+            environment routed through approved models, tools, and destinations —
+            or a Disposable open workspace for non-sensitive work. Either way the
+            agent gets real applications: a browser locked to the governed egress
+            proxy, a shell, files, and packages, all inside the isolated Kasm
+            boundary.
+          </p>
+        </div>
+        <Shot
+          src="access.png"
+          alt="The Create workspace screen showing two access modes — Managed workspace (organization managed, policy-approved tools and destinations only) and Disposable open workspace (non-sensitive work only, inside the isolated Kasm boundary) — with Firefox ESR listed as a managed browser locked to the governed egress proxy."
+          width={dims.access.w}
+          height={dims.access.h}
+          caption="Workspace access — Managed vs. Disposable open, inside the Kasm boundary"
+          callouts={[
+            { x: 28, y: 49, text: 'Managed · org-approved' },
+            { x: 74, y: 49, text: 'Disposable · Kasm boundary' },
+            { x: 30, y: 94, text: 'browser → egress proxy' },
+          ]}
+        />
+      </div>
+    </section>
+
+    <!-- 5 · GOVERNANCE (three proof beats) --------------------------------- -->
+    <section class="panel void" id="governance">
+      <div class="wrap">
+        <div class="sec-head" data-r>
+          <p class="label">03 · GOVERNANCE THAT TRAVELS WITH THE WORK</p>
+          <h2 class="serif t-l">Control the network, the tools, and the record.</h2>
+          <p class="lede">
+            Governance isn't a setting you hope holds — it's enforced at three
+            layers, and every consequential action leaves a signed trace.
+          </p>
+        </div>
+
+        <!-- 5a · egress firewall -->
+        <div class="beat" data-r>
+          <p class="label">EGRESS FIREWALL</p>
+          <h3 class="serif t-m" style="margin:10px 0 0">
+            Deny by default; allow only where you say so.
+          </h3>
+          <Shot
+            src="firewall.png"
+            alt="The Create security group dialog for the egress firewall: a reusable set of Allow and Deny rules whose default behavior is set to Deny unmatched destinations, with an Allow rule for an HTTPS destination on port 443."
+            width={dims.firewall.w}
+            height={dims.firewall.h}
+            caption="Egress firewall — reusable Allow/Deny groups, deny-unmatched by default"
+            callouts={[{ x: 20, y: 42, text: 'deny unmatched' }]}
+          />
+        </div>
+
+        <!-- 5b · tool approvals -->
+        <div class="beat" data-r>
+          <p class="label">TOOL APPROVALS</p>
+          <h3 class="serif t-m" style="margin:10px 0 0">
+            Every tool reviewed against a versioned policy.
+          </h3>
+          <Shot
+            src="approvals.png"
+            alt="The Tools & approvals screen for a connected service, showing an organization tool policy with a version hash, per-tool Allow controls, and a note that approval rules are enforced in Control, not trusted to the desktop client. New or changed tools stay blocked until the exact definition is saved."
+            width={dims.approvals.w}
+            height={dims.approvals.h}
+            caption="Tools & approvals — new or changed tools stay blocked until reviewed"
+            callouts={[
+              { x: 88, y: 39, text: 'policy hash' },
+              { x: 26, y: 91, text: 'enforced in Control' },
+            ]}
+          />
+        </div>
+
+        <!-- 5c · the trail -->
+        <div class="beat" data-r>
+          <p class="label">THE TRAIL</p>
+          <h3 class="serif t-m" style="margin:10px 0 0">
+            Protected actions, signed by an enrolled device.
+          </h3>
+          <Shot
+            src="trail.png"
+            alt="The Trail screen — protected action history — showing an approval device that can sign protected actions only after a deliberate biometric, PIN, or security-key confirmation, above a timeline of verified workspace events."
+            width={dims.trail.w}
+            height={dims.trail.h}
+            caption="Trail — protected actions require a local confirmation on an enrolled device"
+            callouts={[
+              { x: 24, y: 33, text: 'approval device' },
+              { x: 22, y: 78, text: 'signed events' },
+            ]}
+          />
+        </div>
+      </div>
+    </section>
+
+    <!-- 6 · UNATTENDED, STILL ACCOUNTABLE ---------------------------------- -->
+    <section class="panel" id="schedules">
+      <div class="wrap">
+        <div class="sec-head" data-r>
+          <p class="label">04 · UNATTENDED, STILL ACCOUNTABLE</p>
+          <h2 class="serif t-l">Scheduled runs re-check policy before every run.</h2>
+          <p class="lede">
+            Give an agent recurring work and it stays under the same rules as an
+            attended session. Before every run, LemmaComputer re-checks the
+            workspace, agent, and current policy — so a schedule you set months ago
+            can't outrun a policy you changed yesterday.
+          </p>
+        </div>
+        <Shot
+          src="schedules.png"
+          alt="The Create schedule dialog for a scheduled agent prompt, binding a workspace and agent to a recurring time, with a note that LemmaComputer will re-check the workspace, agent, and current policy before every run."
+          width={dims.schedules.w}
+          height={dims.schedules.h}
+          caption="Create schedule — re-checks workspace, agent, and policy before every run"
+          callouts={[{ x: 50, y: 30, text: 're-check before every run' }]}
+        />
+      </div>
+    </section>
+
+    <!-- 7 · WHO IT'S FOR (type only) --------------------------------------- -->
+    <section class="panel" id="who">
+      <div class="wrap">
+        <div class="sec-head" data-r>
+          <p class="label">05 · WHO IT'S FOR</p>
+          <h2 class="serif t-l">Built for the people who ship and the people who sign off.</h2>
+        </div>
+        <div class="cols two">
+          <div class="card" data-r>
+            <h3>DEVELOPERS &amp; AGENT TEAMS</h3>
+            <p>
+              Run the agent you actually want, with a real desktop, shell, browser,
+              and files — not a stripped-down sandbox. Switch clients or model modes
+              per workspace without begging for new infrastructure.
+            </p>
+            <span class="kicker">Freedom to choose your agent.</span>
+          </div>
+          <div class="card" data-r>
+            <h3>PLATFORM &amp; SECURITY</h3>
+            <p>
+              Managed workspaces, a deny-by-default egress firewall, versioned tool
+              policy, and a device-signed trail — so you can say yes to new agents
+              and still answer for what they did.
+            </p>
+            <span class="kicker">Control that travels with the work.</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 8 · CLOSE ---------------------------------------------------------- -->
+    <section class="panel center void" id="close">
+      <div class="wrap">
+        <h2 class="serif t-xl" data-r>
+          Any agent.<br /><span style="color:var(--v-bright)"
+            >One governed computer.<span class="qed"></span></span
+          >
+        </h2>
+        <p class="lede" data-r style="margin-top:24px">
+          Adopt the agents your team is drawn to, and keep the governance your
+          organization requires — on one computer.
+        </p>
+        <div class="cta-row" data-r>
+          <a class="btn btn-p" href={site.requestAccessHref}>Request access</a>
+        </div>
+      </div>
+
+      <footer>
+        <div class="wrap">
+          <div class="foot">
+            <div>
+              <span class="mono">LEMMACOMPUTER<span class="qed"></span></span>
+              <p class="ghost-note">
+                LemmaComputer is a product of LemmaLabs. This site describes a
+                private prototype; the interface shown is real but pre-release, and
+                nothing here is a commitment to features or availability.
+              </p>
+            </div>
+            <div class="mono">{site.productHost}</div>
+          </div>
+        </div>
+      </footer>
+    </section>
+  </main>
+</BaseLayout>
