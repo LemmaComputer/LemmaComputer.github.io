@@ -63,11 +63,12 @@ const requiredCopy = [
 ];
 for (const text of requiredCopy) assert(visibleText.includes(text), `Required locked copy is missing: ${text}`);
 
-// Honesty contract — no invented metrics/customers may sneak into a private-
-// prototype page. Guard the private-prototype disclosure is present.
+// Honesty contract — no invented metrics/customers. The page is now open source,
+// so the footer states its product-of-LemmaLabs lineage rather than a gated
+// private-prototype disclosure.
 assert(
-  visibleText.includes('private prototype'),
-  'The private-prototype disclosure must be present in the footer.',
+  visibleText.includes('product of LemmaLabs'),
+  'The "product of LemmaLabs" footer lineage must be present.',
 );
 
 // Palette guard — no decorative neon brand colours may reach the built CSS.

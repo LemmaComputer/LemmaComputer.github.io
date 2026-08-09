@@ -1,7 +1,10 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
 import Shot from '../components/Shot.astro';
+import ShotDeck from '../components/ShotDeck.astro';
 import { site } from '../config/site';
+
+type Gutter = 'l' | 'r';
 
 // Shot intrinsic dimensions (post-crop, from the pipeline) — passed through so
 // the browser reserves space and nothing shifts as images lazy-load.
@@ -14,9 +17,101 @@ const dims = {
   trail: { w: 1600, h: 1039 },
   schedules: { w: 1600, h: 1031 },
 };
+
+// The six non-hero shots, folded into one tabbed deck. Every alt/caption/callout
+// string here is part of the page's locked copy (see scripts/qa-static.mjs) and
+// stays in the DOM regardless of which tab is visible.
+const deckShots: {
+  id: string;
+  slug: string;
+  label: string;
+  width: number;
+  height: number;
+  alt: string;
+  caption: string;
+  callouts?: { x: number; y: number; text: string; gutter?: Gutter }[];
+}[] = [
+  {
+    id: 'agents',
+    slug: 'agents.png',
+    label: 'Agents',
+    width: dims.agents.w,
+    height: dims.agents.h,
+    alt: 'The AI agents panel: Claude, OpenAI, and Hermes client options, each described as routed through its own governed LemmaComputer identity, plus a default model mode selector — Auto, Lite, Balanced, Pro.',
+    caption: 'AI agents — a separate governed identity, model grant, and tool scope per client',
+    callouts: [
+      { x: 15, y: 24, text: 'Claude', gutter: 'l' },
+      { x: 50, y: 24, text: 'OpenAI · coming soon', gutter: 'l' },
+      { x: 84, y: 40, text: 'Hermes · governed client', gutter: 'r' },
+    ],
+  },
+  {
+    id: 'computer-shot',
+    slug: 'access.png',
+    label: 'Computer',
+    width: dims.access.w,
+    height: dims.access.h,
+    alt: 'The Create workspace screen showing two access modes — Managed workspace (organization managed, policy-approved tools and destinations only) and Disposable open workspace (non-sensitive work only, inside the isolated Kasm boundary) — with Firefox ESR listed as a managed browser locked to the governed egress proxy.',
+    caption: 'Workspace access — Managed vs. Disposable open, inside the Kasm boundary',
+    callouts: [
+      { x: 28, y: 49, text: 'Managed · org-approved', gutter: 'l' },
+      { x: 74, y: 49, text: 'Disposable · Kasm boundary', gutter: 'r' },
+      { x: 30, y: 88, text: 'browser → egress proxy', gutter: 'l' },
+    ],
+  },
+  {
+    id: 'firewall',
+    slug: 'firewall.png',
+    label: 'Firewall',
+    width: dims.firewall.w,
+    height: dims.firewall.h,
+    alt: 'The Create security group dialog for the egress firewall: a reusable set of Allow and Deny rules whose default behavior is set to Deny unmatched destinations, with an Allow rule for an HTTPS destination on port 443.',
+    caption: 'Egress firewall — reusable Allow/Deny groups, deny-unmatched by default',
+    callouts: [{ x: 20, y: 42, text: 'deny unmatched', gutter: 'l' }],
+  },
+  {
+    id: 'approvals',
+    slug: 'approvals.png',
+    label: 'Approvals',
+    width: dims.approvals.w,
+    height: dims.approvals.h,
+    alt: 'The Tools & approvals screen for a connected service, showing an organization tool policy with a version hash, per-tool Allow controls, and a note that approval rules are enforced in Control, not trusted to the desktop client. New or changed tools stay blocked until the exact definition is saved.',
+    caption: 'Tools & approvals — new or changed tools stay blocked until reviewed',
+    callouts: [
+      { x: 88, y: 39, text: 'policy hash', gutter: 'r' },
+      { x: 26, y: 88, text: 'enforced in Control', gutter: 'l' },
+    ],
+  },
+  {
+    id: 'trail',
+    slug: 'trail.png',
+    label: 'Trail',
+    width: dims.trail.w,
+    height: dims.trail.h,
+    alt: 'The Trail screen — protected action history — showing an approval device that can sign protected actions only after a deliberate biometric, PIN, or security-key confirmation, above a timeline of verified workspace events.',
+    caption: 'Trail — protected actions require a local confirmation on an enrolled device',
+    callouts: [
+      { x: 24, y: 33, text: 'approval device', gutter: 'l' },
+      { x: 22, y: 78, text: 'signed events', gutter: 'l' },
+    ],
+  },
+  {
+    id: 'schedules-shot',
+    slug: 'schedules.png',
+    label: 'Schedules',
+    width: dims.schedules.w,
+    height: dims.schedules.h,
+    alt: 'The Create schedule dialog for a scheduled agent prompt, binding a workspace and agent to a recurring time, with a note that LemmaComputer will re-check the workspace, agent, and current policy before every run.',
+    caption: 'Create schedule — re-checks workspace, agent, and policy before every run',
+    callouts: [{ x: 62, y: 30, text: 're-check before every run', gutter: 'r' }],
+  },
+];
 ---
 
 <BaseLayout>
+  {/* Scroll-progress hairline — decorative, driven by ScrollTrigger. */}
+  <div class="scrollbar" id="scrollbar" aria-hidden="true"></div>
+
   <!-- NAV — same fixed, difference-blend bar as LemmaResearch; frosts on scroll. -->
   <nav class="nav" id="nav">
     <a class="mark" href="#top">LEMMACOMPUTER<span class="qed"></span></a>
@@ -24,7 +119,9 @@ const dims = {
       <a class="lnk" href="#agents">AGENTS</a>
       <a class="lnk" href="#computer">COMPUTER</a>
       <a class="lnk" href="#governance">GOVERNANCE</a>
-      <button class="tgl" id="tgl" type="button" aria-label="Toggle colour theme"></button>
+      <button class="tgl" id="tgl" type="button" aria-label="Toggle colour theme">
+        <span class="tgl-knob" aria-hidden="true"></span>
+      </button>
     </div>
   </nav>
 
@@ -35,9 +132,15 @@ const dims = {
         <div class="hero-mark" data-r>
           <span class="mark-big">LEMMACOMPUTER<span class="qed"></span></span>
         </div>
-        <h1 class="serif t-hero hero-h" data-r>
-          Any agent.
-          <span class="h-two">One governed computer.<span class="qed"></span></span>
+        {/* One <h1>. Each word is its own span so the reveal can stagger them
+            (motion.ts); under reduced motion the CSS shows them at full opacity. */}
+        <h1 class="serif t-hero hero-h" data-hero-h>
+          <span class="hline"><span class="w">Any&nbsp;</span><span class="w">agent.</span></span>
+          <span class="h-two hline"
+            ><span class="w">One&nbsp;</span><span class="w">governed&nbsp;</span><span
+              class="w">computer.</span
+            ><span class="qed"></span></span
+          >
         </h1>
         <p class="lede" data-r style="margin-top:28px">
           Bring the AI agent your team already wants — Claude, Codex, Hermes — onto
@@ -46,7 +149,9 @@ const dims = {
           freedom to choose, without losing control.
         </p>
         <div class="cta-row" data-r>
-          <a class="btn btn-p" href={site.requestAccessHref}>Request access</a>
+          <a class="btn btn-p" href={site.githubHref} target="_blank" rel="noopener"
+            >Learn more on GitHub</a
+          >
           <a class="btn btn-g" href="#agents">See how it works</a>
         </div>
         <Shot
@@ -57,15 +162,15 @@ const dims = {
           eager={true}
           caption="Your workspaces — apps, agents, model, and policy, per workspace"
           callouts={[
-            { x: 62, y: 43, text: 'governed routing' },
-            { x: 84, y: 43, text: 'policy · verified' },
+            { x: 62, y: 43, text: 'governed routing', gutter: 'r' },
+            { x: 84, y: 43, text: 'policy · verified', gutter: 'r' },
           ]}
         />
       </div>
     </section>
 
     <!-- 2 · THE TENSION (type only) ---------------------------------------- -->
-    <section class="panel center void" id="tension">
+    <section class="panel center void short" id="tension">
       <div class="wrap">
         <p class="label" data-r>THE TRADE-OFF EVERYONE MAKES</p>
         <h2 class="serif t-xl" data-r style="margin-top:18px">
@@ -80,7 +185,7 @@ const dims = {
       </div>
     </section>
 
-    <!-- 3 · BRING YOUR OWN AGENT ------------------------------------------- -->
+    <!-- 3 · BRING YOUR OWN AGENT (+ the tabbed deck) ----------------------- -->
     <section class="panel" id="agents">
       <div class="wrap">
         <div class="sec-head" data-r>
@@ -89,8 +194,8 @@ const dims = {
           <p class="lede">
             Enable Claude, OpenAI, or Hermes — desktop or CLI. Each enabled client
             receives a separate governed identity, model grant, and tool scope, so
-            you can adopt a new agent without re-architecting trust. Clients that
-            aren't in the approved workspace image simply can't be selected yet.
+            you can adopt a new agent without re-architecting trust. Take the tour:
+            one governed computer, six screens.
           </p>
         </div>
 
@@ -101,23 +206,12 @@ const dims = {
           <span class="mode-pill">Pro</span>
         </div>
 
-        <Shot
-          src="agents.png"
-          alt="The AI agents panel: Claude, OpenAI, and Hermes client options, each described as routed through its own governed LemmaComputer identity, plus a default model mode selector — Auto, Lite, Balanced, Pro."
-          width={dims.agents.w}
-          height={dims.agents.h}
-          caption="AI agents — a separate governed identity, model grant, and tool scope per client"
-          callouts={[
-            { x: 15, y: 24, text: 'Claude' },
-            { x: 50, y: 24, text: 'OpenAI · coming soon' },
-            { x: 84, y: 40, text: 'Hermes · governed client' },
-          ]}
-        />
+        <ShotDeck shots={deckShots} />
       </div>
     </section>
 
-    <!-- 4 · IT'S A REAL COMPUTER ------------------------------------------- -->
-    <section class="panel" id="computer">
+    <!-- 4 · IT'S A REAL COMPUTER (thin anchor → selects the Computer tab) --- -->
+    <section class="panel short" id="computer">
       <div class="wrap">
         <div class="sec-head" data-r>
           <p class="label">02 · IT'S A REAL COMPUTER</p>
@@ -130,92 +224,139 @@ const dims = {
             proxy, a shell, files, and packages, all inside the isolated Kasm
             boundary.
           </p>
-        </div>
-        <Shot
-          src="access.png"
-          alt="The Create workspace screen showing two access modes — Managed workspace (organization managed, policy-approved tools and destinations only) and Disposable open workspace (non-sensitive work only, inside the isolated Kasm boundary) — with Firefox ESR listed as a managed browser locked to the governed egress proxy."
-          width={dims.access.w}
-          height={dims.access.h}
-          caption="Workspace access — Managed vs. Disposable open, inside the Kasm boundary"
-          callouts={[
-            { x: 28, y: 49, text: 'Managed · org-approved' },
-            { x: 74, y: 49, text: 'Disposable · Kasm boundary' },
-            { x: 30, y: 94, text: 'browser → egress proxy' },
-          ]}
-        />
-      </div>
-    </section>
-
-    <!-- 5 · GOVERNANCE (three proof beats) --------------------------------- -->
-    <section class="panel void" id="governance">
-      <div class="wrap">
-        <div class="sec-head" data-r>
-          <p class="label">03 · GOVERNANCE THAT TRAVELS WITH THE WORK</p>
-          <h2 class="serif t-l">Control the network, the tools, and the record.</h2>
-          <p class="lede">
-            Governance isn't a setting you hope holds — it's enforced at three
-            layers, and every consequential action leaves a signed trace.
+          <p class="lede" style="margin-top:14px">
+            <a class="inline-tab-link" href="#agents" data-select-tab="computer-shot"
+              >See the workspace access screen ↑</a
+            >
           </p>
         </div>
+      </div>
+    </section>
 
-        <!-- 5a · egress firewall -->
-        <div class="beat" data-r>
-          <p class="label">EGRESS FIREWALL</p>
-          <h3 class="serif t-m" style="margin:10px 0 0">
-            Deny by default; allow only where you say so.
-          </h3>
-          <Shot
-            src="firewall.png"
-            alt="The Create security group dialog for the egress firewall: a reusable set of Allow and Deny rules whose default behavior is set to Deny unmatched destinations, with an Allow rule for an HTTPS destination on port 443."
-            width={dims.firewall.w}
-            height={dims.firewall.h}
-            caption="Egress firewall — reusable Allow/Deny groups, deny-unmatched by default"
-            callouts={[{ x: 20, y: 42, text: 'deny unmatched' }]}
-          />
+    <!-- 5 · GOVERNANCE — scroll-driven attack storyline -------------------- -->
+    <section class="panel void gov" id="governance">
+      <div class="wrap gov-grid">
+        <!-- Pinned stage: the defensive stack a request travels down through. -->
+        <div class="gov-stage" data-gov>
+          <div
+            class="gov-diagram"
+            role="img"
+            aria-label="How LemmaComputer governs an agent action: the agent issues a request, the policy layer allows a permitted action and blocks a disallowed one, the egress firewall filters the network, and every action is written to a device-signed trail."
+          >
+            <!-- AGENT -->
+            <div class="gov-card" data-node="agent">
+              <span class="gov-ico" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                  <rect x="4" y="7" width="16" height="12" rx="2" />
+                  <path d="M12 7V4" /><circle cx="9" cy="13" r="1" /><circle cx="15" cy="13" r="1" />
+                </svg>
+              </span>
+              <span class="gov-label mono">AGENT</span>
+              <span class="gov-sub">issues an action</span>
+            </div>
+            <!-- packets + connector agent→policy -->
+            <div class="gov-link" data-link="a-p">
+              <span class="pkt pkt-good" data-pkt="good" aria-hidden="true"></span>
+              <span class="pkt pkt-rogue" data-pkt="rogue" aria-hidden="true"></span>
+            </div>
+
+            <!-- POLICY -->
+            <div class="gov-card" data-node="policy">
+              <span class="gov-ico" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                  <path d="M12 3l7 3v5c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V6l7-3z" />
+                  <path class="ico-check" d="M9 12l2 2 4-4" />
+                </svg>
+              </span>
+              <span class="gov-label mono">POLICY LAYER</span>
+              <span class="gov-hash mono" data-hash>policy · v1·——————</span>
+              <span class="gov-halt" data-halt aria-hidden="true">✕ blocked</span>
+            </div>
+            <div class="gov-link" data-link="p-f"></div>
+
+            <!-- EGRESS FIREWALL -->
+            <div class="gov-card" data-node="firewall">
+              <span class="gov-ico" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                  <rect x="3" y="4" width="18" height="16" rx="1" />
+                  <path d="M3 9h18M3 14h18M9 4v5M15 9v5M9 14v6M15 14v6" />
+                </svg>
+              </span>
+              <span class="gov-label mono">EGRESS FIREWALL</span>
+              <span class="gov-sub">deny unmatched · allow only where you say so</span>
+            </div>
+            <div class="gov-link" data-link="f-t"></div>
+
+            <!-- SIGNED TRAIL -->
+            <div class="gov-card" data-node="trail">
+              <span class="gov-ico" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                  <circle cx="8" cy="12" r="4" /><path d="M12 12h8M17 12v4M20 12v3" />
+                </svg>
+              </span>
+              <span class="gov-label mono">SIGNED TRAIL</span>
+              <span class="gov-sig mono" data-sig>✓ signed · enrolled device</span>
+            </div>
+          </div>
         </div>
 
-        <!-- 5b · tool approvals -->
-        <div class="beat" data-r>
-          <p class="label">TOOL APPROVALS</p>
-          <h3 class="serif t-m" style="margin:10px 0 0">
-            Every tool reviewed against a versioned policy.
-          </h3>
-          <Shot
-            src="approvals.png"
-            alt="The Tools & approvals screen for a connected service, showing an organization tool policy with a version hash, per-tool Allow controls, and a note that approval rules are enforced in Control, not trusted to the desktop client. New or changed tools stay blocked until the exact definition is saved."
-            width={dims.approvals.w}
-            height={dims.approvals.h}
-            caption="Tools & approvals — new or changed tools stay blocked until reviewed"
-            callouts={[
-              { x: 88, y: 39, text: 'policy hash' },
-              { x: 26, y: 91, text: 'enforced in Control' },
-            ]}
-          />
-        </div>
+        <!-- Scrolling narrative rail: carries the locked governance copy. -->
+        <div class="gov-beats">
+          <div class="gov-head" data-r>
+            <p class="label">03 · GOVERNANCE THAT TRAVELS WITH THE WORK</p>
+            <h2 class="serif t-l">Watch a rogue action get stopped.</h2>
+            <p class="lede">
+              Governance isn't a setting you hope holds — it's enforced at every
+              layer the work passes through, and every consequential action leaves
+              a signed trace. Scroll to follow a request down the stack.
+            </p>
+          </div>
 
-        <!-- 5c · the trail -->
-        <div class="beat" data-r>
-          <p class="label">THE TRAIL</p>
-          <h3 class="serif t-m" style="margin:10px 0 0">
-            Protected actions, signed by an enrolled device.
-          </h3>
-          <Shot
-            src="trail.png"
-            alt="The Trail screen — protected action history — showing an approval device that can sign protected actions only after a deliberate biometric, PIN, or security-key confirmation, above a timeline of verified workspace events."
-            width={dims.trail.w}
-            height={dims.trail.h}
-            caption="Trail — protected actions require a local confirmation on an enrolled device"
-            callouts={[
-              { x: 24, y: 33, text: 'approval device' },
-              { x: 22, y: 78, text: 'signed events' },
-            ]}
-          />
+          <div class="gov-beat" data-beat="0">
+            <p class="label">THE POLICY LAYER</p>
+            <h3 class="serif t-m">Allowed passes; disallowed is blocked.</h3>
+            <p>
+              Every action is checked against a versioned policy before it can act.
+              A permitted request continues; a rogue one is halted at the layer —
+              enforced in Control, not trusted to the desktop client.
+            </p>
+          </div>
+
+          <div class="gov-beat" data-beat="1">
+            <p class="label">EGRESS FIREWALL</p>
+            <h3 class="serif t-m">Deny by default; allow only where you say so.</h3>
+            <p>
+              What survives policy still can't reach the open internet. The egress
+              firewall denies unmatched destinations and permits only the ones you
+              declare — reusable Allow/Deny groups, deny-unmatched by default.
+            </p>
+          </div>
+
+          <div class="gov-beat" data-beat="2">
+            <p class="label">TOOLS &amp; APPROVALS</p>
+            <h3 class="serif t-m">Every tool reviewed against a versioned policy.</h3>
+            <p>
+              New or changed tools stay blocked until the exact definition is
+              reviewed and saved against the organization's Tools &amp; approvals
+              policy — a version hash you can point to later.
+            </p>
+          </div>
+
+          <div class="gov-beat" data-beat="3">
+            <p class="label">THE TRAIL</p>
+            <h3 class="serif t-m">Protected actions, signed by an enrolled device.</h3>
+            <p>
+              The result lands in the Trail — a timeline of verified workspace
+              events where protected actions are signed by an enrolled device, so
+              you can always answer for what an agent did.
+            </p>
+          </div>
         </div>
       </div>
     </section>
 
-    <!-- 6 · UNATTENDED, STILL ACCOUNTABLE ---------------------------------- -->
-    <section class="panel" id="schedules">
+    <!-- 6 · UNATTENDED (thin anchor → selects the Schedules tab) ----------- -->
+    <section class="panel short" id="schedules">
       <div class="wrap">
         <div class="sec-head" data-r>
           <p class="label">04 · UNATTENDED, STILL ACCOUNTABLE</p>
@@ -226,20 +367,17 @@ const dims = {
             workspace, agent, and current policy — so a schedule you set months ago
             can't outrun a policy you changed yesterday.
           </p>
+          <p class="lede" style="margin-top:14px">
+            <a class="inline-tab-link" href="#agents" data-select-tab="schedules-shot"
+              >See the schedule screen ↑</a
+            >
+          </p>
         </div>
-        <Shot
-          src="schedules.png"
-          alt="The Create schedule dialog for a scheduled agent prompt, binding a workspace and agent to a recurring time, with a note that LemmaComputer will re-check the workspace, agent, and current policy before every run."
-          width={dims.schedules.w}
-          height={dims.schedules.h}
-          caption="Create schedule — re-checks workspace, agent, and policy before every run"
-          callouts={[{ x: 50, y: 30, text: 're-check before every run' }]}
-        />
       </div>
     </section>
 
     <!-- 7 · WHO IT'S FOR (type only) --------------------------------------- -->
-    <section class="panel" id="who">
+    <section class="panel short" id="who">
       <div class="wrap">
         <div class="sec-head" data-r>
           <p class="label">05 · WHO IT'S FOR</p>
@@ -281,7 +419,9 @@ const dims = {
           organization requires — on one computer.
         </p>
         <div class="cta-row" data-r>
-          <a class="btn btn-p" href={site.requestAccessHref}>Request access</a>
+          <a class="btn btn-p" href={site.githubHref} target="_blank" rel="noopener"
+            >Learn more on GitHub</a
+          >
         </div>
       </div>
 
@@ -291,9 +431,9 @@ const dims = {
             <div>
               <span class="mono">LEMMACOMPUTER<span class="qed"></span></span>
               <p class="ghost-note">
-                LemmaComputer is a product of LemmaLabs. This site describes a
-                private prototype; the interface shown is real but pre-release, and
-                nothing here is a commitment to features or availability.
+                LemmaComputer is a product of LemmaLabs. Open source — the interface
+                shown is real and under active development; nothing here is a
+                commitment to features or availability.
               </p>
             </div>
             <div class="mono">{site.productHost}</div>

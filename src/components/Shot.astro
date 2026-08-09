@@ -2,9 +2,10 @@
 import { site } from '../config/site';
 
 interface Callout {
-  x: number; // % from left
-  y: number; // % from top
+  x: number; // % from left, over the image
+  y: number; // % from top, over the image
   text: string;
+  gutter?: 'l' | 'r'; // which margin the label sits in (default: nearest side)
 }
 
 interface Props {
@@ -23,6 +24,12 @@ const { src, alt, width, height, caption, callouts = [], eager = false } = Astro
 // domain needs no change. Collapse any doubled slash.
 const base = import.meta.env.BASE_URL;
 const imgSrc = `${base}shots/${src}`.replace(/([^:])\/{2,}/g, '$1/');
+
+// Default a callout to the nearer gutter if the author didn't pin a side.
+const withGutter = callouts.map((c) => ({
+  ...c,
+  gutter: c.gutter ?? (c.x < 50 ? 'l' : 'r'),
+}));
 ---
 
 <figure class="shot" data-r>
@@ -30,23 +37,33 @@ const imgSrc = `${base}shots/${src}`.replace(/([^:])\/{2,}/g, '$1/');
     <span class="shot-dots"><i></i><i></i><i></i></span>
     <span class="shot-url mono"><b>{site.productHost}</b></span>
   </div>
+  {/* The frame spans gutters + image; the image sits in a centered band. Callout
+      dots pin to the image; labels live out in the gutters connected by a thin
+      horizontal leader — so a label can never sit over the product UI. */}
   <div class="shot-frame">
-    <img
-      src={imgSrc}
-      alt={alt}
-      width={width}
-      height={height}
-      loading={eager ? 'eager' : 'lazy'}
-      decoding="async"
-    />
+    <div class="shot-band">
+      <img
+        src={imgSrc}
+        alt={alt}
+        width={width}
+        height={height}
+        loading={eager ? 'eager' : 'lazy'}
+        decoding="async"
+      />
+      {
+        withGutter.map((c) => (
+          <span class="cdot" style={`left:${c.x}%;top:${c.y}%`} aria-hidden="true" />
+        ))
+      }
+    </div>
     {
-      callouts.map((c) => (
+      withGutter.map((c) => (
         <span
-          class="shot-callout"
-          style={`left:${c.x}%;top:${c.y}%`}
+          class={`shot-callout g-${c.gutter}`}
+          style={`--cx:${c.x}%;--cy:${c.y}%`}
           aria-hidden="true"
         >
-          <span class="cdot" />
+          <span class="leader"></span>
           <span class="clabel mono">{c.text}</span>
         </span>
       ))

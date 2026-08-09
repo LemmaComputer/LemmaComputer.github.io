@@ -1,0 +1,121 @@
+---
+import { site } from '../config/site';
+
+interface DeckCallout {
+  x: number; // % over the image
+  y: number;
+  text: string;
+  gutter?: 'l' | 'r';
+}
+
+interface DeckShot {
+  id: string; // tab id fragment, e.g. "agents"
+  slug: string; // "agents.png" — must be one of the emitted shots
+  label: string; // tab button text
+  alt: string; // locked thesis alt string — carries meaning, stays in DOM always
+  caption: string;
+  width: number;
+  height: number;
+  callouts?: DeckCallout[];
+}
+
+interface Props {
+  shots: DeckShot[];
+  autoMs?: number;
+}
+
+const { shots, autoMs = 4200 } = Astro.props;
+
+const base = import.meta.env.BASE_URL;
+const shotSrc = (slug: string) => `${base}shots/${slug}`.replace(/([^:])\/{2,}/g, '$1/');
+const withGutter = (cs: DeckCallout[] = []) =>
+  cs.map((c) => ({ ...c, gutter: c.gutter ?? (c.x < 50 ? 'l' : 'r') }));
+
+// Ring geometry — circumference of r=16 circle, exposed to the timer tween.
+const RING = (2 * Math.PI * 16).toFixed(2);
+---
+
+{/* One light card presenting six shots as tabs. All panes render server-side so
+    their alt/caption/callout text is always in the DOM (locked-copy safe) and so
+    the first pane shows even if JS never loads. initDeck() in motion.ts wires the
+    crossfade, auto-advance timer ring, hover-pause, and pin-on-interaction. */}
+<div class="deck" data-deck data-auto={autoMs}>
+  <div class="deck-tabs" role="tablist" aria-label="Product tour" data-r>
+    {
+      shots.map((s, i) => (
+        <button
+          class={`deck-tab${i === 0 ? ' is-on' : ''}`}
+          role="tab"
+          id={`tab-${s.id}`}
+          aria-controls={`pane-${s.id}`}
+          aria-selected={i === 0 ? 'true' : 'false'}
+          tabindex={i === 0 ? 0 : -1}
+          type="button"
+        >
+          <svg class="deck-ring" viewBox="0 0 36 36" aria-hidden="true">
+            <circle class="ring-bg" cx="18" cy="18" r="16" />
+            <circle
+              class="ring-fg"
+              cx="18"
+              cy="18"
+              r="16"
+              style={`stroke-dasharray:${RING};stroke-dashoffset:${RING}`}
+            />
+          </svg>
+          <span class="deck-tab-label">{s.label}</span>
+        </button>
+      ))
+    }
+  </div>
+
+  <figure class="shot deck-stage" data-r>
+    <div class="shot-chrome" aria-hidden="true">
+      <span class="shot-dots"><i></i><i></i><i></i></span>
+      <span class="shot-url mono"><b>{site.productHost}</b></span>
+    </div>
+    <div class="shot-frame deck-frame">
+      {
+        shots.map((s, i) => (
+          <div
+            class={`deck-pane${i === 0 ? ' is-on' : ''}`}
+            role="tabpanel"
+            id={`pane-${s.id}`}
+            aria-labelledby={`tab-${s.id}`}
+            hidden={i !== 0}
+          >
+            <div class="shot-band">
+              <img
+                src={shotSrc(s.slug)}
+                alt={s.alt}
+                width={s.width}
+                height={s.height}
+                loading={i === 0 ? 'eager' : 'lazy'}
+                fetchpriority="low"
+                decoding="async"
+              />
+              {withGutter(s.callouts).map((c) => (
+                <span class="cdot" style={`left:${c.x}%;top:${c.y}%`} aria-hidden="true" />
+              ))}
+            </div>
+            {withGutter(s.callouts).map((c) => (
+              <span
+                class={`shot-callout g-${c.gutter}`}
+                style={`--cx:${c.x}%;--cy:${c.y}%`}
+                aria-hidden="true"
+              >
+                <span class="leader"></span>
+                <span class="clabel mono">{c.text}</span>
+              </span>
+            ))}
+          </div>
+        ))
+      }
+    </div>
+  </figure>
+
+  <figcaption class="shot-cap deck-cap" aria-live="polite">{shots[0]?.caption}</figcaption>
+  {/* All captions kept in the DOM for locked-copy; only the first is shown. */}
+  <div class="deck-caps-hidden" hidden>
+    {shots.map((s) => <span data-cap-for={s.id}>{s.caption}</span>)}
+  </div>
+</div>

@@ -328,6 +328,17 @@ section {
 h1.hero-h {
   margin: 0;
 }
+/* Each word is its own span so motion.ts can rise them in behind a line mask.
+   inline-block is required for the yPercent transform; &nbsp; inside each span
+   preserves inter-word spacing when GSAP forces inline-block. */
+.hline {
+  display: block;
+  overflow: hidden;
+}
+.w {
+  display: inline-block;
+  will-change: transform;
+}
 /* Second line of the hero <h1> — the "governed" resolution, in verdigris. Stays
    inside the single <h1> as a span; no second heading element. */
 .h-two {
@@ -405,44 +416,83 @@ h1.hero-h {
   color: #15181a;
   font-weight: 500;
 }
+/* The frame spans two gutters + a centered image band. Callout dots pin to the
+   image inside the band; labels live in the gutters, connected by a horizontal
+   leader — so a label can never overlap the product UI (the reported bug). */
 .shot-frame {
+  position: relative;
+  display: grid;
+  grid-template-columns: var(--gutter, 120px) 1fr var(--gutter, 120px);
+  background: #fff;
+}
+.shot-band {
+  grid-column: 2;
   position: relative;
   line-height: 0;
 }
-.shot-frame img {
+.shot-band img {
   display: block;
   width: 100%;
   height: auto;
 }
-/* Callout markers: a verdigris dot + mono label pinned to a % anchor over the
-   shot. aria-hidden — the alt text carries the meaning. */
-.shot-callout {
+/* A verdigris dot pinned to an x/y% anchor over the image. */
+.cdot {
   position: absolute;
   transform: translate(-50%, -50%);
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  pointer-events: none;
-}
-.shot-callout .cdot {
-  width: 12px;
-  height: 12px;
+  width: 11px;
+  height: 11px;
   border-radius: 50%;
   background: var(--v-bright);
   box-shadow: 0 0 0 4px rgb(61 165 136 / 0.22);
-  flex: none;
+  pointer-events: none;
+  z-index: 2;
+}
+/* The label sits in a gutter at the dot's vertical position (--cy), joined by a
+   thin horizontal leader. g-l → left gutter; g-r → right gutter. Colors are
+   hardcoded light because the shot card is always light, in any theme. */
+.shot-callout {
+  position: absolute;
+  top: var(--cy);
+  display: flex;
+  align-items: center;
+  gap: 0;
+  pointer-events: none;
+  transform: translateY(-50%);
+  z-index: 3;
+}
+.shot-callout.g-l {
+  left: 0;
+  width: var(--gutter, 120px);
+  flex-direction: row-reverse;
+  padding-left: 12px;
+}
+.shot-callout.g-r {
+  right: 0;
+  width: var(--gutter, 120px);
+  flex-direction: row;
+  padding-right: 12px;
+}
+.shot-callout .leader {
+  flex: 1;
+  height: 1px;
+  background: rgb(61 165 136 / 0.55);
+  transform-origin: var(--lo, right) center;
+}
+.shot-callout.g-l .leader {
+  --lo: left;
 }
 .shot-callout .clabel {
   font-family: 'JetBrains Mono', monospace;
-  font-size: 10.5px;
-  letter-spacing: 0.04em;
+  font-size: 10px;
+  letter-spacing: 0.02em;
   color: #0c1f19;
-  background: rgb(255 255 255 / 0.92);
+  background: rgb(255 255 255 / 0.94);
   border: 1px solid rgb(61 165 136 / 0.5);
   border-radius: 4px;
-  padding: 4px 8px;
+  padding: 4px 7px;
   white-space: nowrap;
   box-shadow: 0 4px 14px -8px rgb(8 9 10 / 0.5);
+  flex: none;
 }
 .shot-cap {
   font-family: 'JetBrains Mono', monospace;
@@ -524,15 +574,315 @@ h1.hero-h {
   background: var(--glow);
 }
 
-/* ---- Governance triptych (three proof beats stacked) ---- */
-.beat {
-  margin-top: 96px;
+/* ---- Tabbed shot deck (six shots, one card) ----
+   Reuses .shot / .shot-chrome so the card stays LIGHT in any theme. */
+.deck {
+  margin-top: 40px;
 }
-.beat:first-of-type {
-  margin-top: 48px;
+.deck-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 18px;
 }
-.beat .label {
+.deck-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-2);
+  background: none;
+  border: 1px solid var(--hairline);
+  border-radius: 999px;
+  padding: 7px 14px 7px 9px;
+  cursor: pointer;
+  transition: color 0.35s var(--e), border-color 0.35s var(--e), background 0.35s var(--e);
+}
+.deck-tab:hover {
+  color: var(--text);
+  border-color: var(--text-2);
+}
+.deck-tab.is-on {
   color: var(--v-bright);
+  border-color: var(--v-bright);
+  background: var(--glow);
+}
+.deck-ring {
+  width: 18px;
+  height: 18px;
+  flex: none;
+  transform: rotate(-90deg);
+}
+.deck-ring .ring-bg {
+  fill: none;
+  stroke: var(--hairline);
+  stroke-width: 3;
+}
+.deck-ring .ring-fg {
+  fill: none;
+  stroke: var(--v-bright);
+  stroke-width: 3;
+  stroke-linecap: round;
+  transition: stroke-dashoffset 0.1s linear;
+}
+.deck-tab:not(.is-on) .ring-fg {
+  opacity: 0;
+}
+.deck-stage {
+  margin-top: 0;
+}
+/* Fixed aspect frame → zero layout shift as panes crossfade. All panes stack. */
+.deck-frame {
+  display: block;
+  aspect-ratio: 1600 / 1035;
+}
+.deck-pane {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.5s var(--e);
+}
+.deck-pane.is-on {
+  opacity: 1;
+  visibility: visible;
+}
+.deck-pane[hidden] {
+  display: block;
+}
+/* Inside a pane the band + gutters use the same grid as a plain shot. */
+.deck-pane .shot-frame {
+  position: absolute;
+  inset: 0;
+  height: 100%;
+}
+.deck-pane .shot-band {
+  display: flex;
+  align-items: center;
+}
+.deck-cap {
+  min-height: 1.4em;
+}
+.deck-caps-hidden {
+  display: none;
+}
+
+/* ---- Governance scrollytelling (attack storyline) ----
+   Dark section; the diagram is our own art (unlike the always-light shots). */
+.gov {
+  padding: 0;
+}
+.gov-grid {
+  display: grid;
+  grid-template-columns: 1fr 1.05fr;
+  gap: 56px;
+  align-items: start;
+}
+.gov-stage {
+  position: relative;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 120px 0;
+}
+.gov-diagram {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0;
+  width: 100%;
+  max-width: 400px;
+}
+.gov-card {
+  position: relative;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  grid-template-rows: auto auto;
+  column-gap: 14px;
+  align-items: center;
+  padding: 18px 20px;
+  border: 1px solid var(--void-rule);
+  border-radius: 10px;
+  background: #0d1113;
+  opacity: 0.34;
+  transition: opacity 0.5s var(--e), border-color 0.5s var(--e), box-shadow 0.5s var(--e),
+    transform 0.5s var(--e);
+}
+.gov-card.lit {
+  opacity: 1;
+  border-color: var(--v-bright);
+  box-shadow: 0 0 0 1px var(--v-bright), 0 0 34px -6px rgb(61 165 136 / 0.5);
+}
+.gov-card.blocked {
+  border-color: var(--oxide);
+  box-shadow: 0 0 0 1px var(--oxide), 0 0 34px -6px rgb(158 56 43 / 0.55);
+}
+.gov-ico {
+  grid-row: 1 / 3;
+  width: 34px;
+  height: 34px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--void-2);
+  border: 1px solid var(--void-rule);
+  border-radius: 8px;
+  transition: color 0.5s var(--e), border-color 0.5s var(--e);
+}
+.gov-card.lit .gov-ico {
+  color: var(--v-bright);
+  border-color: var(--v-bright);
+}
+.gov-card.blocked .gov-ico {
+  color: var(--oxide);
+  border-color: var(--oxide);
+}
+.gov-ico svg {
+  width: 20px;
+  height: 20px;
+}
+.gov-label {
+  font-size: 12px;
+  letter-spacing: 0.12em;
+  color: #e9ece8;
+  align-self: end;
+}
+.gov-sub,
+.gov-hash,
+.gov-sig {
+  grid-column: 2;
+  font-size: 10.5px;
+  color: #9aa3a1;
+  align-self: start;
+}
+.gov-hash,
+.gov-sig {
+  font-family: 'JetBrains Mono', monospace;
+  letter-spacing: 0.04em;
+}
+.gov-card.lit .gov-sig {
+  color: var(--v-bright);
+}
+/* The halt cap that flashes when the rogue action is blocked at policy. */
+.gov-halt {
+  position: absolute;
+  top: -11px;
+  right: 14px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  color: #fff;
+  background: var(--oxide);
+  border-radius: 4px;
+  padding: 3px 8px;
+  opacity: 0;
+  transform: scale(0.8);
+  transition: opacity 0.3s var(--e), transform 0.3s var(--e);
+}
+.gov-card.blocked .gov-halt {
+  opacity: 1;
+  transform: none;
+}
+/* Vertical connectors between cards, with packets that ride down them. */
+.gov-link {
+  position: relative;
+  height: 46px;
+  margin: 0 auto;
+  width: 2px;
+  background: var(--void-rule);
+  overflow: visible;
+}
+.gov-link::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: var(--v-bright);
+  transform: scaleY(var(--fill, 0));
+  transform-origin: top;
+  transition: transform 0.4s var(--e);
+}
+.pkt {
+  position: absolute;
+  left: 50%;
+  top: 0;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  opacity: 0;
+  z-index: 4;
+}
+.pkt-good {
+  background: var(--v-bright);
+  box-shadow: 0 0 14px 2px rgb(61 165 136 / 0.7);
+}
+.pkt-rogue {
+  background: var(--oxide);
+  box-shadow: 0 0 14px 2px rgb(158 56 43 / 0.7);
+}
+
+/* The scrolling narrative rail beside the pinned diagram. */
+.gov-beats {
+  padding: 120px 0;
+}
+.gov-head {
+  margin-bottom: 30vh;
+}
+.gov-head .label {
+  color: var(--v-bright);
+}
+.gov-beat {
+  min-height: 62vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  opacity: 0.28;
+  transition: opacity 0.5s var(--e);
+}
+.gov-beat.lit {
+  opacity: 1;
+}
+.gov-beat .label {
+  color: var(--v-bright);
+}
+.gov-beat h3 {
+  margin: 12px 0 14px;
+  color: #e9ece8;
+}
+.gov-beat p {
+  color: #9aa3a1;
+  font-size: clamp(15px, 1.4vw, 18px);
+  max-width: 46ch;
+  margin: 0;
+}
+
+/* ---- Scroll-progress hairline ---- */
+.scrollbar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  z-index: 9996;
+  background: var(--v-bright);
+  transform: scaleX(0);
+  transform-origin: left;
+  pointer-events: none;
+}
+
+.inline-tab-link {
+  color: var(--v-bright);
+  text-decoration: none;
+  font-weight: 500;
+  border-bottom: 1px solid transparent;
+  transition: border-color 0.3s;
+}
+.inline-tab-link:hover {
+  border-color: var(--v-bright);
 }
 
 /* ---- Footer ---- */
@@ -606,12 +956,37 @@ footer {
   .shot {
     margin-top: 32px;
   }
-  /* Callouts crowd the small shots — hide them; the alt/caption carries it. */
+  /* No room for gutters on a phone — collapse them and drop the leader labels;
+     the alt/caption carries the meaning. */
+  .shot-frame {
+    grid-template-columns: 1fr;
+  }
+  .shot-band {
+    grid-column: 1;
+  }
   .shot-callout {
     display: none;
   }
-  .beat {
-    margin-top: 64px;
+  /* Governance stacks: diagram above, beats below, nothing pinned. */
+  .gov-grid {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+  .gov-stage {
+    min-height: auto;
+    padding: 72px 0 8px;
+    /* pin is disabled on mobile in motion.ts; this is the static fallback */
+  }
+  .gov-beats {
+    padding: 8px 0 72px;
+  }
+  .gov-beat {
+    min-height: auto;
+    padding: 34px 0;
+    opacity: 1;
+  }
+  .gov-head {
+    margin-bottom: 8px;
   }
 }
 @media (max-width: 380px) {
@@ -648,6 +1023,41 @@ footer {
   .nav {
     opacity: 1 !important;
     transform: none !important;
+  }
+  /* Deck: show the first pane statically; tabs still switch via CSS class. */
+  .deck-pane.is-on {
+    opacity: 1 !important;
+    visibility: visible !important;
+  }
+  /* Governance: render the final, fully-lit assembled state — every card lit,
+     connectors filled, packets hidden, nothing pinned. The aria-label carries
+     the causal story regardless. */
+  .gov-stage {
+    min-height: auto;
+    padding: 72px 0;
+  }
+  .gov-card {
+    opacity: 1 !important;
+    border-color: var(--v-bright) !important;
+  }
+  .gov-card .gov-ico {
+    color: var(--v-bright) !important;
+    border-color: var(--v-bright) !important;
+  }
+  .gov-halt {
+    display: none;
+  }
+  .gov-link::after {
+    transform: scaleY(1) !important;
+  }
+  .pkt {
+    display: none;
+  }
+  .gov-beat {
+    opacity: 1 !important;
+  }
+  .scrollbar {
+    display: none;
   }
 }
 :focus-visible {
