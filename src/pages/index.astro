@@ -16,6 +16,8 @@ const dims = {
   approvals: { w: 1600, h: 1031 },
   trail: { w: 1600, h: 1039 },
   schedules: { w: 1600, h: 1031 },
+  claudeClarify: { w: 1600, h: 1149 },
+  claudeReason: { w: 1600, h: 1149 },
 };
 
 // The six non-hero shots, folded into one tabbed deck. Every alt/caption/callout
@@ -31,6 +33,24 @@ const deckShots: {
   caption: string;
   callouts?: { x: number; y: number; text: string; gutter?: Gutter }[];
 }[] = [
+  {
+    id: 'ask',
+    slug: 'claude-clarify.png',
+    label: 'Ask',
+    width: dims.claudeClarify.w,
+    height: dims.claudeClarify.h,
+    alt: 'Claude working inside a LemmaComputer workspace: asked to help build a financial model, it pauses to ask what kind — Operating forecast, Valuation model, Project finance, Personal finance, or something else — with the composer showing the request routed through the organization route.',
+    caption: 'Claude at work — a real agent session inside a governed LemmaComputer workspace',
+  },
+  {
+    id: 'reason',
+    slug: 'claude-reason.png',
+    label: 'Reason',
+    width: dims.claudeReason.w,
+    height: dims.claudeReason.h,
+    alt: 'The same Claude session reasoning through a live task — estimating the IRR and payback for the Jewel Changi Airport project — its thought process proposing to work at project level in Singapore dollars from public data and clearly stated assumptions.',
+    caption: 'Claude reasoning through a live task, every action still under workspace policy',
+  },
   {
     id: 'agents',
     slug: 'agents.png',
@@ -194,8 +214,8 @@ const deckShots: {
           <p class="lede">
             Enable Claude, OpenAI, or Hermes — desktop or CLI. Each enabled client
             receives a separate governed identity, model grant, and tool scope, so
-            you can adopt a new agent without re-architecting trust. Take the tour:
-            one governed computer, six screens.
+            you can adopt a new agent without re-architecting trust. See Claude at
+            work inside a workspace, then take the tour of the computer around it.
           </p>
         </div>
 
