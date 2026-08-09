@@ -1133,36 +1133,43 @@ footer {
   .arch-flows {
     display: none;
   }
-  /* initArch early-returns below 901px, so JS never lights the diagram. Paint
-     the same final, fully-assembled static state the reduced-motion block uses:
-     boundary drawn, socket + running agent + trail lit, watched paths shown,
-     action packets hidden, notes all visible. The aria-label narrates the rest. */
-  .arch-socket {
-    border-color: var(--v-bright);
-  }
-  .arch-boundary {
-    opacity: 1;
-    border-color: var(--v-bright);
-  }
-  .arch-run,
-  .arch-node {
-    opacity: 1;
-  }
-  .arch-run,
-  .arch-node-trail {
-    border-color: var(--v-bright);
-  }
-  .arch-halt {
-    display: none;
-  }
+  /* No packet ever travels on mobile, so hide the action packets and the
+     "stopped" caps — the watched paths simply read as watched (amber), never
+     as an alarming red block flash. */
+  .arch-halt,
   .arch-pkt-agent {
     display: none;
   }
-  .arch-trail-row {
-    opacity: 1;
+  /* Below 901px the pinned scrub timeline can't run; instead initArchMobile()
+     (motion.ts) lights each beat in order as it scrolls into view, adding the
+     same .drawn/.lit/.watching/.stamped classes the desktop timeline toggles.
+     So we DON'T force the lit state here — the base unlit state shows and JS
+     animates to lit. (Under prefers-reduced-motion the RM block below wins with
+     !important and holds the fully-lit static state, and initArchMobile()
+     early-returns, so a reduced-motion phone is never stranded mid-reveal.)
+     The chips start hidden and fade in with a small stagger once the socket
+     lights — mobile-scoped so they don't fight GSAP's autoAlpha on desktop. */
+  .arch-socket .arch-chip {
+    opacity: 0;
+    transform: translateY(-8px);
+    transition: opacity 0.4s var(--e), transform 0.4s var(--e);
   }
-  .arch-note {
+  .arch-socket.chips-in .arch-chip {
     opacity: 1;
+    transform: none;
+  }
+  .arch-socket.chips-in .arch-chip:nth-child(2) {
+    transition-delay: 0.08s;
+  }
+  .arch-socket.chips-in .arch-chip:nth-child(3) {
+    transition-delay: 0.16s;
+  }
+  .arch-socket.chips-in .arch-chip:nth-child(4) {
+    transition-delay: 0.24s;
+  }
+  /* The ghost "…or your own" chip settles a touch dimmer, matching desktop. */
+  .arch-socket.chips-in .arch-chip-ghost {
+    opacity: 0.6;
   }
 }
 @media (max-width: 380px) {

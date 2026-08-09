@@ -300,7 +300,7 @@ if (g && ST) {
     const stage = document.querySelector('[data-arch]') as HTMLElement | null;
     const section = $('governance');
     if (!stage || !section) return;
-    if (RM || !DESKTOP) return; // CSS renders the final assembled state statically
+    if (RM || !DESKTOP) return; // desktop-only pinned timeline; mobile uses initArchMobile, RM stays static
 
     const node = (n: string) => stage.querySelector(`[data-node="${n}"]`) as HTMLElement | null;
     const notes = qsa('.arch-note', section);
@@ -395,10 +395,63 @@ if (g && ST) {
   }
 
   /* ------------------------------------------------------------------ *
+   * ARCHITECTURE HERO — MOBILE sequential scroll-reveal.
+   * On narrow screens the pinned scrub timeline can't run, so instead of
+   * showing a pre-lit static diagram we light each beat in order as the
+   * stacked diagram scrolls into view: boundary draws → agent socket +
+   * chips → running agent → the two watched paths (amber) → signed trail
+   * stamps. No pin, no horizontal packet flight, and no oxide "blocked"
+   * flash (no packet travels on mobile — the paths simply read as watched).
+   * Reuses the same .drawn/.lit/.watching/.stamped classes the desktop
+   * timeline toggles. Under RM the CSS holds the fully-lit static state and
+   * this early-returns.
+   * ------------------------------------------------------------------ */
+  function initArchMobile() {
+    const stage = document.querySelector('[data-arch]') as HTMLElement | null;
+    const section = $('governance');
+    if (!stage || !section) return;
+    if (RM || DESKTOP) return; // desktop path handled by initArch; RM stays static
+
+    const node = (n: string) => stage.querySelector(`[data-node="${n}"]`) as HTMLElement | null;
+    const socket = stage.querySelector('[data-arch-socket]') as HTMLElement | null;
+    const boundary = stage.querySelector('[data-boundary]') as HTMLElement | null;
+    const trailRow = stage.querySelector('[data-trail-row]') as HTMLElement | null;
+    const notes = qsa('.arch-note', section);
+
+    // One-shot reveal: add `cls` to `el` the first time it scrolls into view.
+    const revealAt = (el: Element | null, cls: string, start = 'top 80%') => {
+      if (!el) return;
+      ST.create({ trigger: el, start, once: true, onEnter: () => el.classList.add(cls) });
+    };
+
+    // Beats, in reading order down the stacked column.
+    revealAt(boundary, 'drawn', 'top 82%');
+    if (boundary)
+      ST.create({ trigger: boundary, start: 'top 82%', once: true, onEnter: () => stage.classList.add('assembled') });
+    if (socket)
+      ST.create({
+        trigger: socket,
+        start: 'top 82%',
+        once: true,
+        onEnter: () => {
+          socket.classList.add('lit');
+          socket.classList.add('chips-in'); // CSS fades the four chips in with a stagger
+        },
+      });
+    revealAt(node('run'), 'lit');
+    revealAt(node('web'), 'watching');
+    revealAt(node('tools'), 'watching');
+    revealAt(node('trail'), 'lit');
+    revealAt(trailRow, 'stamped');
+    notes.forEach((n) => revealAt(n, 'lit', 'top 85%'));
+  }
+
+  /* ------------------------------------------------------------------ *
    * INIT + ScrollTrigger robustness
    * ------------------------------------------------------------------ */
   initDeck();
   initArch();
+  initArchMobile();
 
   // Pinning depends on final document height. Refresh after fonts swap and
   // after the eager deck/hero images decode, or the governance pin jumps.
