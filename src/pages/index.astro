@@ -365,36 +365,44 @@ const deckShots: {
           </p>
         </div>
 
-        <figure class="shot-desktop" data-r>
-          <img
-            src="/shots/claude-desktop-vm.png"
-            width={dims.claudeDesktop.w}
-            height={dims.claudeDesktop.h}
-            loading="lazy"
-            decoding="async"
-            alt="The full Ubuntu desktop inside a LemmaComputer workspace — Applications and Claude in the top bar, Firefox ESR, Claude CLI, and Claude Desktop launcher icons on the wallpaper — with the Claude Desktop app open, reasoning through a live task: estimating the IRR and payback for the Jewel Changi Airport project."
-          />
-          <figcaption>
-            Claude Desktop, running inside the governed VM — a real Ubuntu desktop,
-            not a stripped-down sandbox.
-          </figcaption>
-        </figure>
+        <!-- Two full-desktop shots side by side; on desktop the stage pins and
+             vertical scroll pans the track from the first shot to the second
+             (initProofRail). On mobile / reduced-motion the track is a native
+             swipe scroller (or wraps in flow) — no pin, both shots readable. -->
+        <div class="proof-stage" data-proof>
+          <div class="proof-track" data-proof-track>
+            <figure class="shot-desktop" data-r>
+              <img
+                src="/shots/claude-desktop-vm.png"
+                width={dims.claudeDesktop.w}
+                height={dims.claudeDesktop.h}
+                loading="lazy"
+                decoding="async"
+                alt="The full Ubuntu desktop inside a LemmaComputer workspace — Applications and Claude in the top bar, Firefox ESR, Claude CLI, and Claude Desktop launcher icons on the wallpaper — with the Claude Desktop app open, reasoning through a live task: estimating the IRR and payback for the Jewel Changi Airport project."
+              />
+              <figcaption>
+                Claude Desktop, running inside the governed VM — a real Ubuntu desktop,
+                not a stripped-down sandbox.
+              </figcaption>
+            </figure>
 
-        <figure class="shot-desktop" data-r>
-          <img
-            src="/shots/claude-browser-vm.png"
-            width={dims.claudeBrowser.w}
-            height={dims.claudeBrowser.h}
-            loading="lazy"
-            decoding="async"
-            alt="The same governed computer reached in a browser at onecomputer.metech.dev — the Ubuntu desktop inside the workspace, with Claude's Cowork view open, pausing to ask what kind of financial model to build."
-          />
-          <figcaption>
-            The same computer in the browser at
-            <span class="mono">onecomputer.metech.dev</span> — every agent action still
-            inside the governed workspace.
-          </figcaption>
-        </figure>
+            <figure class="shot-desktop" data-r>
+              <img
+                src="/shots/claude-browser-vm.png"
+                width={dims.claudeBrowser.w}
+                height={dims.claudeBrowser.h}
+                loading="lazy"
+                decoding="async"
+                alt="The same governed computer reached in a browser at onecomputer.metech.dev — the Ubuntu desktop inside the workspace, with Claude's Cowork view open, pausing to ask what kind of financial model to build."
+              />
+              <figcaption>
+                The same computer in the browser at
+                <span class="mono">onecomputer.metech.dev</span> — every agent action still
+                inside the governed workspace.
+              </figcaption>
+            </figure>
+          </div>
+        </div>
       </div>
     </section>
 

@@ -142,12 +142,23 @@ if (g && ST) {
   }
 
   /* ------------------------------------------------------------------ *
-   * TABBED SHOT DECK
+   * SHOT DECK — pinned two-column scrollytelling carousel.
+   * The six product shots sit side-by-side in one horizontal .deck-track;
+   * pinning the .deck-stage and scrubbing the track's xPercent turns vertical
+   * scroll into a horizontal pan. The right-hand feature rail highlights the
+   * shot currently centered (and fills its ring marker + swaps the caption);
+   * clicking a rail feature — or a #computer/#schedules "See the … screen ↑"
+   * anchor — scroll-jumps the page to that shot's slice of the pin. Arrow keys
+   * on the rail do the same. Under reduced motion / non-desktop the CSS lays
+   * every shot + feature out in flow and this early-returns (mobile gets a
+   * native scroll-snap swiper; nothing is pinned or scroll-jacked).
    * ------------------------------------------------------------------ */
-  function initDeck() {
+  function initDeckScroll() {
     const deck = document.querySelector('[data-deck]') as HTMLElement | null;
     if (!deck) return;
-    const tabs = qsa<HTMLButtonElement>('.deck-tab', deck);
+    const stage = deck.querySelector('.deck-stage') as HTMLElement | null;
+    const track = deck.querySelector('[data-deck-track]') as HTMLElement | null;
+    const feats = qsa<HTMLButtonElement>('.deck-feat', deck);
     const panes = qsa('.deck-pane', deck);
     const cap = deck.querySelector('.deck-cap') as HTMLElement | null;
     const capMap = new Map<string, string>();
@@ -155,151 +166,128 @@ if (g && ST) {
       const id = el.getAttribute('data-cap-for');
       if (id) capMap.set(id, el.textContent || '');
     });
-    if (!tabs.length) return;
+    const n = feats.length;
+    if (!stage || !track || n === 0) return;
 
-    const autoMs = parseInt(deck.getAttribute('data-auto') || '4200', 10);
     const RING = 2 * Math.PI * 16;
     let active = 0;
-    let pinned = false; // permanently stops the timer once the user interacts
-    let paused = false; // transient (hover / offscreen)
-    let onScreen = true;
-    let timer: any = null; // the ring tween
 
-    function paneIdOf(tab: HTMLButtonElement) {
-      return (tab.getAttribute('aria-controls') || '').replace(/^pane-/, '');
-    }
+    const paneIdOf = (feat: HTMLButtonElement) =>
+      (feat.getAttribute('aria-controls') || '').replace(/^pane-/, '');
+    const ringFg = (i: number) => feats[i]?.querySelector('.ring-fg') as SVGElement | null;
 
-    function ringFg(i: number) {
-      return tabs[i]?.querySelector('.ring-fg') as SVGElement | null;
-    }
-
-    function select(i: number, focus = false) {
+    // Reflect the centered shot into the rail: highlight its feature, fill its
+    // ring, mark its pane .is-on, and swap the live caption. Pure reflection of
+    // scroll state — never drives the scroll itself.
+    function markActive(i: number) {
       if (i === active) return;
-      const prevFg = ringFg(active);
-      if (prevFg) g.set(prevFg, { strokeDashoffset: RING });
       active = i;
-      tabs.forEach((t, k) => {
+      feats.forEach((f, k) => {
         const on = k === i;
-        t.classList.toggle('is-on', on);
-        t.setAttribute('aria-selected', on ? 'true' : 'false');
-        t.tabIndex = on ? 0 : -1;
+        f.classList.toggle('is-on', on);
+        f.setAttribute('aria-selected', on ? 'true' : 'false');
+        f.tabIndex = on ? 0 : -1;
+        const fg = ringFg(k);
+        if (fg) g.set(fg, { strokeDashoffset: on ? 0 : RING });
       });
-      panes.forEach((p, k) => {
-        const on = k === i;
-        p.classList.toggle('is-on', on);
-        if (on) p.removeAttribute('hidden');
-        else p.setAttribute('hidden', '');
-      });
-      const id = paneIdOf(tabs[i]!);
+      panes.forEach((p, k) => p.classList.toggle('is-on', k === i));
+      const id = paneIdOf(feats[i]!);
       if (cap && capMap.has(id)) cap.textContent = capMap.get(id)!;
-      if (focus) tabs[i]!.focus();
-      // decode the next image ahead of time so its future advance is instant
-      const nextImg = panes[(i + 1) % panes.length]?.querySelector('img') as
-        | HTMLImageElement
-        | undefined;
-      if (nextImg && 'requestIdleCallback' in window)
-        (window as any).requestIdleCallback(() => nextImg.decode?.().catch(() => {}));
     }
 
-    function stopTimer() {
-      if (timer) {
-        timer.kill();
-        timer = null;
-      }
-    }
-
-    function runTimer() {
-      if (RM || pinned || paused || !onScreen) return;
-      stopTimer();
-      const fg = ringFg(active);
-      if (!fg) return;
-      g.set(fg, { strokeDashoffset: RING });
-      timer = g.to(fg, {
-        strokeDashoffset: 0,
-        duration: autoMs / 1000,
-        ease: 'none',
-        onComplete: () => {
-          select((active + 1) % tabs.length);
-          runTimer();
-        },
+    // Reduced motion / non-desktop: no pin, no scrub. Show all features lit and
+    // let the CSS present the shots in flow (or as a swipe scroller on mobile).
+    if (RM || !DESKTOP) {
+      feats.forEach((f, k) => {
+        f.tabIndex = k === 0 ? 0 : -1;
+        const fg = ringFg(k);
+        if (fg) g.set(fg, { strokeDashoffset: 0 });
       });
+      return;
     }
 
-    function pin() {
-      pinned = true;
-      stopTimer();
-      const fg = ringFg(active);
-      if (fg) g.set(fg, { strokeDashoffset: RING });
+    // Pin the stage from its own top and scrub the track left. ~120% of the
+    // fold per shot gives an unhurried pan without dead scroll at the end.
+    const pinLen = () => stage.offsetHeight * 1.2 * (n - 1);
+    const st = ST.create({
+      trigger: stage,
+      start: 'top top',
+      end: () => '+=' + pinLen(),
+      pin: stage,
+      scrub: 0.6,
+      invalidateOnRefresh: true,
+      // Refresh AFTER the earlier pins (arch, proof) so this pin's start is
+      // measured against a document that already includes their pin-spacers.
+      // Descending priority = top-to-bottom refresh order (arch 30 > proof 20 >
+      // deck 10); without it the sequential pins miscompute and overlap.
+      refreshPriority: 10,
+      onUpdate: (self: any) => {
+        g.set(track, { xPercent: -100 * (n - 1) * self.progress });
+        markActive(Math.round(self.progress * (n - 1)));
+      },
+    });
+
+    // Scroll the PAGE so the pin lands on shot i (scrub then centers it).
+    // Native smooth scroll — no ScrollToPlugin dependency (only gsap +
+    // ScrollTrigger are loaded from the CDN).
+    function goToShot(i: number) {
+      const idx = Math.max(0, Math.min(n - 1, i));
+      const start = st.start as number;
+      const len = (st.end as number) - start;
+      const y = start + (len * idx) / (n - 1);
+      window.scrollTo({ top: y, behavior: 'smooth' });
     }
 
-    tabs.forEach((tab, i) => {
-      tab.addEventListener('click', () => {
-        pin();
-        select(i);
-      });
-      tab.addEventListener('keydown', (e: KeyboardEvent) => {
-        let n = -1;
-        if (e.key === 'ArrowRight' || e.key === 'ArrowDown') n = (i + 1) % tabs.length;
-        else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') n = (i - 1 + tabs.length) % tabs.length;
-        else if (e.key === 'Home') n = 0;
-        else if (e.key === 'End') n = tabs.length - 1;
-        if (n >= 0) {
+    feats.forEach((feat, i) => {
+      feat.addEventListener('click', () => goToShot(i));
+      feat.addEventListener('keydown', (e: KeyboardEvent) => {
+        let t = -1;
+        if (e.key === 'ArrowRight' || e.key === 'ArrowDown') t = i + 1;
+        else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') t = i - 1;
+        else if (e.key === 'Home') t = 0;
+        else if (e.key === 'End') t = n - 1;
+        if (t >= 0 && t < n) {
           e.preventDefault();
-          pin();
-          select(n, true);
+          feats[t]!.focus();
+          goToShot(t);
         }
       });
     });
 
-    // Hover pauses the auto-advance (does not permanently pin).
-    deck.addEventListener('pointerenter', () => {
-      paused = true;
-      stopTimer();
-    });
-    deck.addEventListener('pointerleave', () => {
-      paused = false;
-      runTimer();
-    });
-
-    // Only run the loop while the deck is on screen.
-    ST.create({
-      trigger: deck,
-      start: 'top 85%',
-      end: 'bottom 15%',
-      onEnter: () => {
-        onScreen = true;
-        runTimer();
-      },
-      onEnterBack: () => {
-        onScreen = true;
-        runTimer();
-      },
-      onLeave: () => {
-        onScreen = false;
-        stopTimer();
-      },
-      onLeaveBack: () => {
-        onScreen = false;
-        stopTimer();
-      },
-    });
-
-    // Thin #computer / #schedules anchor links select their deck tab.
-    function selectTabById(paneId: string) {
-      const idx = tabs.findIndex((t) => paneIdOf(t) === paneId);
-      if (idx >= 0) {
-        pin();
-        select(idx);
-      }
-    }
+    // Thin #computer / #schedules anchor links jump to their shot.
     qsa<HTMLAnchorElement>('[data-select-tab]').forEach((a) => {
       a.addEventListener('click', () => {
         const id = a.getAttribute('data-select-tab');
-        if (id) setTimeout(() => selectTabById(id), 60);
+        if (!id) return;
+        const idx = feats.findIndex((f) => paneIdOf(f) === id);
+        if (idx >= 0) setTimeout(() => goToShot(idx), 60);
       });
     });
+  }
 
-    if (!RM) runTimer();
+  /* ------------------------------------------------------------------ *
+   * DESKTOP PROOF — pinned two-panel horizontal pan.
+   * The two full-Ubuntu-desktop shots sit side by side; pinning the stage and
+   * scrubbing the track from 0 → -100% pans from the first to the second under
+   * vertical scroll. No rail, no captions to swap (each figure keeps its own).
+   * Same desktop-only guard as the deck; mobile/RM get the native scroller.
+   * ------------------------------------------------------------------ */
+  function initProofRail() {
+    const stage = document.querySelector('[data-proof]') as HTMLElement | null;
+    const track = stage?.querySelector('[data-proof-track]') as HTMLElement | null;
+    if (!stage || !track) return;
+    if (RM || !DESKTOP) return;
+
+    ST.create({
+      trigger: stage,
+      start: 'top top',
+      end: '+=120%',
+      pin: stage,
+      scrub: 0.6,
+      invalidateOnRefresh: true,
+      refreshPriority: 20, // refresh after arch (30), before deck (10) — DOM order
+      onUpdate: (self: any) => g.set(track, { xPercent: -100 * self.progress }),
+    });
   }
 
   /* ------------------------------------------------------------------ *
@@ -352,6 +340,7 @@ if (g && ST) {
         pin: stage,
         scrub: 0.6,
         invalidateOnRefresh: true,
+        refreshPriority: 30, // first pinned section → refresh first (proof 20, deck 10 follow)
       },
     });
 
@@ -676,7 +665,8 @@ if (g && ST) {
   initArtifacts();
   initTicker();
   initWall();
-  initDeck();
+  initProofRail();
+  initDeckScroll();
   initArch();
   initArchMobile();
 

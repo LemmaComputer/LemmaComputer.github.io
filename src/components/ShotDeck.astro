@@ -11,110 +11,123 @@ interface DeckCallout {
 interface DeckShot {
   id: string; // tab id fragment, e.g. "agents"
   slug: string; // "agents.png" — must be one of the emitted shots
-  label: string; // tab button text
+  label: string; // rail feature title
   alt: string; // locked thesis alt string — carries meaning, stays in DOM always
-  caption: string;
+  caption: string; // rail feature body + the live caption line (locked-copy home)
   width: number;
   height: number;
-  callouts?: DeckCallout[];
+  callouts?: DeckCallout[]; // kept in the data model; no longer rendered over the image
 }
 
 interface Props {
   shots: DeckShot[];
-  autoMs?: number;
 }
 
-const { shots, autoMs = 4200 } = Astro.props;
+const { shots } = Astro.props;
 
 const base = import.meta.env.BASE_URL;
 const shotSrc = (slug: string) => `${base}shots/${slug}`.replace(/([^:])\/{2,}/g, '$1/');
-const withGutter = (cs: DeckCallout[] = []) =>
-  cs.map((c) => ({ ...c, gutter: c.gutter ?? (c.x < 50 ? 'l' : 'r') }));
 
-// Ring geometry — circumference of r=16 circle, exposed to the timer tween.
+// Split a "Title — explanation" caption into its two halves for the feature
+// rail; falls back to the whole string if there's no em-dash. The full caption
+// text still ends up in the DOM (title + body concatenated), so locked strings
+// like "Tools & approvals" survive verbatim.
+const feat = (caption: string) => {
+  const i = caption.indexOf(' — ');
+  return i === -1
+    ? { title: caption, body: '' }
+    : { title: caption.slice(0, i), body: caption.slice(i + 3) };
+};
+
+// Ring geometry — circumference of r=16 circle. The ring is now a passive
+// active-state marker (filled when its shot is centered), not a timer.
 const RING = (2 * Math.PI * 16).toFixed(2);
 ---
 
-{/* One light card presenting six shots as tabs. All panes render server-side so
-    their alt/caption/callout text is always in the DOM (locked-copy safe) and so
-    the first pane shows even if JS never loads. initDeck() in motion.ts wires the
-    crossfade, auto-advance timer ring, hover-pause, and pin-on-interaction. */}
-<div class="deck" data-deck data-auto={autoMs}>
-  <div class="deck-tabs" role="tablist" aria-label="Product tour" data-r>
-    {
-      shots.map((s, i) => (
-        <button
-          class={`deck-tab${i === 0 ? ' is-on' : ''}`}
-          role="tab"
-          id={`tab-${s.id}`}
-          aria-controls={`pane-${s.id}`}
-          aria-selected={i === 0 ? 'true' : 'false'}
-          tabindex={i === 0 ? 0 : -1}
-          type="button"
-        >
-          <svg class="deck-ring" viewBox="0 0 36 36" aria-hidden="true">
-            <circle class="ring-bg" cx="18" cy="18" r="16" />
-            <circle
-              class="ring-fg"
-              cx="18"
-              cy="18"
-              r="16"
-              style={`stroke-dasharray:${RING};stroke-dashoffset:${RING}`}
-            />
-          </svg>
-          <span class="deck-tab-label">{s.label}</span>
-        </button>
-      ))
-    }
-  </div>
-
-  <figure class="shot deck-stage" data-r>
-    <div class="shot-chrome" aria-hidden="true">
-      <span class="shot-dots"><i></i><i></i><i></i></span>
-      <span class="shot-url mono"><b>{site.productHost}</b></span>
-    </div>
-    <div class="shot-frame deck-frame">
-      {
-        shots.map((s, i) => (
-          <div
-            class={`deck-pane${i === 0 ? ' is-on' : ''}`}
-            role="tabpanel"
-            id={`pane-${s.id}`}
-            aria-labelledby={`tab-${s.id}`}
-            hidden={i !== 0}
-          >
-            <div class="shot-band">
-              <img
-                src={shotSrc(s.slug)}
-                alt={s.alt}
-                width={s.width}
-                height={s.height}
-                loading={i === 0 ? 'eager' : 'lazy'}
-                fetchpriority="low"
-                decoding="async"
-              />
-              {withGutter(s.callouts).map((c) => (
-                <span class="cdot" style={`left:${c.x}%;top:${c.y}%`} aria-hidden="true" />
-              ))}
-            </div>
-            {withGutter(s.callouts).map((c) => (
-              <span
-                class={`shot-callout g-${c.gutter}`}
-                style={`--cx:${c.x}%;--cy:${c.y}%`}
-                aria-hidden="true"
+{/* A pinned two-column scrollytelling carousel. LEFT: an aspect-locked frame
+    holding all six shots in one horizontal .deck-track; vertical scroll pans the
+    track (initDeckScroll in motion.ts). RIGHT: a feature rail — one button per
+    shot — that highlights the shot currently on screen and, on click, scrolls the
+    page to that shot's scroll position. The rail buttons keep the tab-<id> /
+    pane-<id> aria wiring so the #computer / #schedules "See the … screen ↑"
+    anchors (data-select-tab) still land on the right shot. Every pane + feature
+    renders server-side (locked copy stays in the DOM; the first shot shows even
+    if JS never loads). Under reduced motion / no-JS the CSS lays all shots out in
+    flow and shows every feature — nothing is pinned. */}
+<div class="deck" data-deck>
+  <div class="deck-stage" data-r>
+    <!-- LEFT · the panning filmstrip -->
+    <figure class="shot deck-frame-card">
+      <div class="shot-chrome" aria-hidden="true">
+        <span class="shot-dots"><i></i><i></i><i></i></span>
+        <span class="shot-url mono"><b>{site.productHost}</b></span>
+      </div>
+      <div class="deck-frame">
+        <div class="deck-track" data-deck-track>
+          {
+            shots.map((s, i) => (
+              <div
+                class={`deck-pane${i === 0 ? ' is-on' : ''}`}
+                role="tabpanel"
+                id={`pane-${s.id}`}
+                aria-labelledby={`tab-${s.id}`}
               >
-                <span class="leader"></span>
-                <span class="clabel mono">{c.text}</span>
+                <div class="shot-band">
+                  <img
+                    src={shotSrc(s.slug)}
+                    alt={s.alt}
+                    width={s.width}
+                    height={s.height}
+                    loading={i === 0 ? 'eager' : 'lazy'}
+                    fetchpriority="low"
+                    decoding="async"
+                  />
+                </div>
+              </div>
+            ))
+          }
+        </div>
+      </div>
+      <figcaption class="shot-cap deck-cap" aria-live="polite">{shots[0]?.caption}</figcaption>
+    </figure>
+
+    <!-- RIGHT · the synced feature rail (also the clickable tab rail) -->
+    <div class="deck-rail" role="tablist" aria-label="Product tour" aria-orientation="vertical">
+      {
+        shots.map((s, i) => {
+          const f = feat(s.caption);
+          return (
+            <button
+              class={`deck-feat${i === 0 ? ' is-on' : ''}`}
+              role="tab"
+              id={`tab-${s.id}`}
+              aria-controls={`pane-${s.id}`}
+              aria-selected={i === 0 ? 'true' : 'false'}
+              tabindex={i === 0 ? 0 : -1}
+              type="button"
+            >
+              <svg class="deck-ring" viewBox="0 0 36 36" aria-hidden="true">
+                <circle class="ring-bg" cx="18" cy="18" r="16" />
+                <circle
+                  class="ring-fg"
+                  cx="18"
+                  cy="18"
+                  r="16"
+                  style={`stroke-dasharray:${RING};stroke-dashoffset:0`}
+                />
+              </svg>
+              <span class="deck-feat-text">
+                <span class="deck-feat-title">{f.title}</span>
+                {f.body && <span class="deck-feat-body">{f.body}</span>}
               </span>
-            ))}
-          </div>
-        ))
+            </button>
+          );
+        })
       }
     </div>
-  </figure>
+  </div>
 
-  <figcaption class="shot-cap deck-cap" aria-live="polite">{shots[0]?.caption}</figcaption>
-  {/* All captions kept in the DOM for locked-copy; only the first is shown. */}
+  {/* All captions kept in the DOM for the aria-live swap + locked-copy safety. */}
   <div class="deck-caps-hidden" hidden>
     {shots.map((s) => <span data-cap-for={s.id}>{s.caption}</span>)}
   </div>

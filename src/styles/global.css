@@ -787,100 +787,143 @@ h1.hero-h {
   background: var(--glow);
 }
 
-/* ---- Tabbed shot deck (six shots, one card) ----
-   Reuses .shot / .shot-chrome so the card stays LIGHT in any theme. */
+/* ---- Shot deck — pinned two-column scrollytelling carousel ----
+   LEFT: an aspect-locked frame (light .shot card, any theme) holding all six
+   shots side by side in one horizontal .deck-track that scroll pans. RIGHT: a
+   synced feature rail — one item per shot — that lights up as its shot centers
+   and doubles as the clickable tab rail. On desktop the .deck-stage is pinned
+   (motion.ts); on mobile / reduced motion it collapses to a single column with
+   a native swipe scroller (rules in the media / RM blocks below). */
 .deck {
   margin-top: 40px;
 }
-.deck-tabs {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin-bottom: 18px;
-}
-.deck-tab {
-  display: inline-flex;
-  align-items: center;
-  gap: 9px;
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 11px;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--text-2);
-  background: none;
-  border: 1px solid var(--hairline);
-  border-radius: 999px;
-  padding: 7px 14px 7px 9px;
-  cursor: pointer;
-  transition: color 0.35s var(--e), border-color 0.35s var(--e), background 0.35s var(--e);
-}
-.deck-tab:hover {
-  color: var(--text);
-  border-color: var(--text-2);
-}
-.deck-tab.is-on {
-  color: var(--v-bright);
-  border-color: var(--v-bright);
-  background: var(--glow);
-}
-.deck-ring {
-  width: 18px;
-  height: 18px;
-  flex: none;
-  transform: rotate(-90deg);
-}
-.deck-ring .ring-bg {
-  fill: none;
-  stroke: var(--hairline);
-  stroke-width: 3;
-}
-.deck-ring .ring-fg {
-  fill: none;
-  stroke: var(--v-bright);
-  stroke-width: 3;
-  stroke-linecap: round;
-  transition: stroke-dashoffset 0.1s linear;
-}
-.deck-tab:not(.is-on) .ring-fg {
-  opacity: 0;
-}
 .deck-stage {
-  margin-top: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 300px;
+  gap: 40px;
+  align-items: center;
+  /* Pinned to one viewport on desktop; keeps the diagram centered in the fold
+     the way the arch stage does. */
+  min-height: 100vh;
 }
-/* Fixed aspect frame → zero layout shift as panes crossfade. All panes stack. */
+/* The shot card is the filmstrip viewport — the horizontal track is clipped to
+   the aspect-locked frame so only one shot shows at a time. */
+.deck-frame-card {
+  margin-top: 0;
+  align-self: center;
+}
 .deck-frame {
+  position: relative;
   display: block;
   aspect-ratio: 1600 / 1035;
+  overflow: hidden;
+}
+.deck-track {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-wrap: nowrap;
+  width: 100%;
+  height: 100%;
+  will-change: transform;
 }
 .deck-pane {
-  position: absolute;
-  inset: 0;
-  opacity: 0;
-  visibility: hidden;
-  transition: opacity 0.5s var(--e);
-}
-.deck-pane.is-on {
-  opacity: 1;
-  visibility: visible;
-}
-.deck-pane[hidden] {
-  display: block;
-}
-/* Inside a pane the band + gutters use the same grid as a plain shot. */
-.deck-pane .shot-frame {
-  position: absolute;
-  inset: 0;
+  position: relative;
+  flex: 0 0 100%;
+  width: 100%;
   height: 100%;
 }
 .deck-pane .shot-band {
+  height: 100%;
   display: flex;
   align-items: center;
+}
+.deck-pane .shot-band img {
+  width: 100%;
+  height: auto;
 }
 .deck-cap {
   min-height: 1.4em;
 }
 .deck-caps-hidden {
   display: none;
+}
+
+/* RIGHT — the synced feature rail (also the tab rail). */
+.deck-rail {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  align-self: center;
+}
+.deck-feat {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  text-align: left;
+  width: 100%;
+  background: none;
+  border: 1px solid transparent;
+  border-left: 2px solid var(--hairline);
+  border-radius: 0 8px 8px 0;
+  padding: 12px 14px;
+  cursor: pointer;
+  color: var(--text-2);
+  opacity: 0.55;
+  transition: opacity 0.4s var(--e), color 0.4s var(--e), border-color 0.4s var(--e),
+    background 0.4s var(--e);
+}
+.deck-feat:hover {
+  opacity: 0.85;
+  color: var(--text);
+}
+.deck-feat.is-on {
+  opacity: 1;
+  color: var(--text);
+  border-left-color: var(--v-bright);
+  background: var(--glow);
+}
+.deck-feat-text {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+.deck-feat-title {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: inherit;
+}
+.deck-feat.is-on .deck-feat-title {
+  color: var(--v-bright);
+}
+.deck-feat-body {
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--text-2);
+}
+/* The ring is a passive active-state marker (filled when its shot is centered),
+   sized down to a small bullet beside the feature title. */
+.deck-ring {
+  width: 16px;
+  height: 16px;
+  flex: none;
+  margin-top: 1px;
+  transform: rotate(-90deg);
+}
+.deck-ring .ring-bg {
+  fill: none;
+  stroke: var(--hairline);
+  stroke-width: 4;
+}
+.deck-ring .ring-fg {
+  fill: none;
+  stroke: var(--v-bright);
+  stroke-width: 4;
+  stroke-linecap: round;
+  transition: stroke-dashoffset 0.35s var(--e);
 }
 
 /* ---- Architecture hero (the animated centerpiece) ----
@@ -1211,6 +1254,48 @@ h1.hero-h {
   color: #0c1f19;
 }
 
+/* ---- Desktop-proof carousel — pinned two-panel horizontal pan ----
+   The two full-desktop shots sit side by side in .proof-track; on desktop the
+   stage is pinned to one viewport and vertical scroll pans 0 → -100% between
+   them (motion.ts initProofRail). On mobile / reduced motion the stage is a
+   plain block and the two figures fall back to native flow / swipe (below). */
+/* Neutralize the .panel flex-centering + 100vh min-height on the two sections
+   that host a pinned 100vh stage: the sec-head must sit at natural top and
+   scroll away, leaving the .proof-stage / .deck-stage below it as the sole
+   pinned, self-centering region. Without this the head+stage are centered
+   inside a taller panel box, which detaches the pin's start measurement from
+   the element's real position (negative/​stale start → the pan fires off-screen).
+   Same fix the .arch section uses. Desktop only; mobile/RM stacks in flow. */
+@media (min-width: 901px) {
+  #proof,
+  #agents {
+    display: block;
+    min-height: 0;
+  }
+}
+.proof-stage {
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+}
+.proof-track {
+  display: flex;
+  flex-wrap: nowrap;
+  width: 100%;
+  will-change: transform;
+}
+.proof-track .shot-desktop {
+  flex: 0 0 100%;
+  margin: 0;
+}
+/* Keep each shot within the fold so nothing clips top/bottom while pinned. */
+.proof-track .shot-desktop img {
+  max-height: 74vh;
+  width: auto;
+  margin: 0 auto;
+}
+
 /* ---- Scroll-progress hairline ---- */
 .scrollbar {
   position: fixed;
@@ -1317,6 +1402,57 @@ footer {
   }
   .shot-callout {
     display: none;
+  }
+  /* Shot deck — no pin on mobile (JS early-returns). Collapse to one column:
+     filmstrip on top, feature rail beneath, and turn the track into a native
+     horizontal swipe scroller with scroll-snap. Only the track scrolls
+     sideways — the page never overflows horizontally. */
+  .deck-stage {
+    display: block;
+    min-height: auto;
+  }
+  .deck-frame {
+    aspect-ratio: auto;
+    overflow: visible;
+  }
+  .deck-track {
+    position: static;
+    height: auto;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    transform: none !important;
+  }
+  .deck-pane {
+    scroll-snap-align: center;
+  }
+  .deck-rail {
+    margin-top: 20px;
+  }
+  /* All features read on mobile (no active sync); keep them legible. */
+  .deck-feat {
+    opacity: 1;
+  }
+  /* Desktop-proof — same native-swipe fallback, un-pinned. */
+  .proof-stage {
+    height: auto;
+    display: block;
+    overflow: visible;
+  }
+  .proof-track {
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    transform: none !important;
+    gap: 16px;
+  }
+  .proof-track .shot-desktop {
+    scroll-snap-align: center;
+    margin: 32px 0 0;
+  }
+  .proof-track .shot-desktop img {
+    max-height: none;
+    width: 100%;
   }
   /* Architecture stacks: diagram above, notes below, nothing pinned. The
      pin is disabled on mobile in motion.ts; this is the static fallback. */
@@ -1431,10 +1567,48 @@ footer {
     opacity: 1 !important;
     transform: none !important;
   }
-  /* Deck: show the first pane statically; tabs still switch via CSS class. */
-  .deck-pane.is-on {
+  /* Shot deck: no pin, no pan. Stack the shots in flow (single column, rail
+     below) and show every feature so the whole tour reads statically. */
+  .deck-stage {
+    display: block;
+    min-height: auto;
+  }
+  .deck-frame {
+    aspect-ratio: auto;
+    overflow: visible;
+  }
+  .deck-track {
+    position: static;
+    height: auto;
+    flex-wrap: wrap;
+    transform: none !important;
+  }
+  .deck-pane {
+    flex-basis: 100%;
+  }
+  .deck-rail {
+    margin-top: 20px;
+  }
+  .deck-feat {
     opacity: 1 !important;
-    visibility: visible !important;
+  }
+  /* Desktop-proof: un-pinned, both shots in flow. */
+  .proof-stage {
+    height: auto;
+    display: block;
+    overflow: visible;
+  }
+  .proof-track {
+    flex-wrap: wrap;
+    transform: none !important;
+  }
+  .proof-track .shot-desktop {
+    flex-basis: 100%;
+    margin: 32px 0 0;
+  }
+  .proof-track .shot-desktop img {
+    max-height: none;
+    width: 100%;
   }
   /* Architecture: render the final, fully-assembled state — boundary drawn,
      socket + running agent + trail lit, watched paths shown (not blocked),
