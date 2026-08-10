@@ -546,9 +546,14 @@ h1.hero-h {
   color: #8a9290;
 }
 /* The always-light screenshot card floats brighter on black — deepen its cast
-   shadow so it reads as lifted, not pasted-on. */
-.hero-void .shot {
+   shadow so it reads as lifted, not pasted-on. Applies on every dark section
+   (hero + the reskinned proof / agents), not just the hero. */
+.void .shot,
+.void .shot-desktop {
   box-shadow: 0 1px 0 rgb(0 0 0 / 0.04), 0 40px 90px -46px rgb(0 0 0 / 0.85);
+}
+.void .shot-desktop {
+  border-color: rgb(255 255 255 / 0.08);
 }
 /* Each word is its own span so motion.ts can rise them in behind a line mask.
    inline-block is required for the yPercent transform; &nbsp; inside each span
@@ -821,6 +826,19 @@ h1.hero-h {
   border-color: var(--v-bright);
   background: var(--glow);
 }
+/* On dark sections the pills + deck caption need lighter hairlines / text. */
+.void .mode-pill {
+  color: var(--void-2);
+  border-color: var(--void-rule);
+}
+.void .mode-pill.is-on {
+  color: var(--v-bright);
+  border-color: var(--v-bright);
+  background: rgb(61 165 136 / 0.14);
+}
+.void .shot-cap {
+  color: #9aa3a1;
+}
 
 /* ---- Shot deck — pinned two-column scrollytelling carousel ----
    LEFT: an aspect-locked frame (light .shot card, any theme) holding all six
@@ -856,17 +874,24 @@ h1.hero-h {
 .deck-track {
   position: absolute;
   inset: 0;
-  display: flex;
-  flex-wrap: nowrap;
   width: 100%;
   height: 100%;
-  will-change: transform;
 }
+/* Panes are stacked, not laid side by side — vertical scroll crossfades one
+   into the next in place (initDeckScroll drives opacity, not an x-translate).
+   The horizontal pan read as a confusing carousel; a fade keeps focus on the
+   one capability on screen. */
 .deck-pane {
-  position: relative;
-  flex: 0 0 100%;
+  position: absolute;
+  inset: 0;
   width: 100%;
   height: 100%;
+  opacity: 0;
+  will-change: opacity;
+  transition: opacity 0.5s var(--e);
+}
+.deck-pane.is-on {
+  opacity: 1;
 }
 .deck-pane .shot-band {
   height: 100%;
@@ -959,6 +984,26 @@ h1.hero-h {
   stroke-width: 4;
   stroke-linecap: round;
   transition: stroke-dashoffset 0.35s var(--e);
+}
+/* Feature rail on a dark section — lift the idle text off black and give the
+   hairlines / active glow the dark-theme treatment so the rail reads clearly. */
+.void .deck-feat {
+  color: #9aa3a1;
+  border-left-color: var(--void-rule);
+}
+.void .deck-feat:hover {
+  color: #e9ece8;
+}
+.void .deck-feat.is-on {
+  color: #e9ece8;
+  border-left-color: var(--v-bright);
+  background: rgb(61 165 136 / 0.14);
+}
+.void .deck-feat-body {
+  color: #9aa3a1;
+}
+.void .deck-ring .ring-bg {
+  stroke: var(--void-rule);
 }
 
 /* ---- Architecture hero (the animated centerpiece) ----
@@ -1314,15 +1359,24 @@ h1.hero-h {
   align-items: center;
   overflow: hidden;
 }
+/* Stack the two shots and crossfade between them (initProofRail drives
+   opacity). The old side-by-side horizontal pan read as a confusing carousel;
+   a fade keeps the two proof states clean and in place. */
 .proof-track {
-  display: flex;
-  flex-wrap: nowrap;
+  position: relative;
   width: 100%;
-  will-change: transform;
 }
 .proof-track .shot-desktop {
-  flex: 0 0 100%;
+  position: absolute;
+  inset: 0;
   margin: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  will-change: opacity;
+}
+.proof-track .shot-desktop:first-child {
+  position: relative;
 }
 /* Keep each shot within the fold so nothing clips top/bottom while pinned. */
 .proof-track .shot-desktop img {
@@ -1452,6 +1506,8 @@ footer {
   }
   .deck-track {
     position: static;
+    display: flex;
+    flex-wrap: nowrap;
     height: auto;
     overflow-x: auto;
     /* proximity, not mandatory: mandatory snap on a horizontal scroller nested
@@ -1463,7 +1519,15 @@ footer {
     overscroll-behavior-x: contain;
     transform: none !important;
   }
+  /* Desktop stacks + crossfades the panes (absolute, opacity 0). On mobile the
+     track is a native swipe scroller, so put the panes back in flow, full-width
+     and fully visible. */
   .deck-pane {
+    position: relative;
+    inset: auto;
+    flex: 0 0 100%;
+    height: auto;
+    opacity: 1;
     scroll-snap-align: center;
   }
   .deck-rail {
@@ -1480,6 +1544,8 @@ footer {
     overflow: visible;
   }
   .proof-track {
+    position: static;
+    display: flex;
     overflow-x: auto;
     scroll-snap-type: x proximity;
     -webkit-overflow-scrolling: touch;
@@ -1487,7 +1553,13 @@ footer {
     transform: none !important;
     gap: 16px;
   }
+  /* Desktop stacks + crossfades the two shots; mobile is a native swipe
+     scroller, so put both figures back in flow, side by side, fully visible. */
   .proof-track .shot-desktop {
+    position: relative;
+    inset: auto;
+    flex: 0 0 100%;
+    opacity: 1;
     scroll-snap-align: center;
     margin: 32px 0 0;
   }
@@ -1636,12 +1708,18 @@ footer {
   }
   .deck-track {
     position: static;
+    display: flex;
     height: auto;
     flex-wrap: wrap;
     transform: none !important;
   }
+  /* Reduced motion: no crossfade — show every pane statically in flow. */
   .deck-pane {
+    position: relative;
+    inset: auto;
+    height: auto;
     flex-basis: 100%;
+    opacity: 1;
   }
   .deck-rail {
     margin-top: 20px;
@@ -1656,11 +1734,17 @@ footer {
     overflow: visible;
   }
   .proof-track {
+    position: static;
+    display: flex;
     flex-wrap: wrap;
     transform: none !important;
   }
+  /* Reduced motion: no crossfade — both shots static in flow. */
   .proof-track .shot-desktop {
+    position: relative;
+    inset: auto;
     flex-basis: 100%;
+    opacity: 1;
     margin: 32px 0 0;
   }
   .proof-track .shot-desktop img {

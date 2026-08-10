@@ -221,8 +221,11 @@ if (g && ST) {
       // Descending priority = top-to-bottom refresh order (arch 30 > proof 20 >
       // deck 10); without it the sequential pins miscompute and overlap.
       refreshPriority: 10,
+      // Crossfade in place: scroll picks which shot is centered; markActive
+      // toggles its pane .is-on and the CSS opacity-transition fades it in over
+      // the one before it. No x-translate — the left-to-right pan read as a
+      // confusing carousel; a fade keeps focus on one capability at a time.
       onUpdate: (self: any) => {
-        g.set(track, { xPercent: -100 * (n - 1) * self.progress });
         markActive(Math.round(self.progress * (n - 1)));
       },
     });
@@ -278,6 +281,12 @@ if (g && ST) {
     if (!stage || !track) return;
     if (RM || !DESKTOP) return;
 
+    const shots = qsa('.shot-desktop', track);
+    if (shots.length < 2) return;
+    const [first, second] = shots;
+    g.set(first!, { autoAlpha: 1 });
+    g.set(second!, { autoAlpha: 0 });
+
     ST.create({
       trigger: stage,
       start: 'top top',
@@ -286,7 +295,14 @@ if (g && ST) {
       scrub: 0.6,
       invalidateOnRefresh: true,
       refreshPriority: 20, // refresh after arch (30), before deck (10) — DOM order
-      onUpdate: (self: any) => g.set(track, { xPercent: -100 * self.progress }),
+      // Crossfade the two proof shots in place instead of panning horizontally:
+      // the second fades up over the first across the pin. Linear on progress so
+      // pin-start is unambiguously shot 1 and pin-end is shot 2.
+      onUpdate: (self: any) => {
+        const t = self.progress;
+        g.set(second!, { autoAlpha: t });
+        g.set(first!, { autoAlpha: 1 - t });
+      },
     });
   }
 

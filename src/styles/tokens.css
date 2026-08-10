@@ -8,9 +8,11 @@
   --verdigris: #1e6b57;
   --amber: #b8862b;
   --oxide: #9e382b;
-  --void: #08090a;
+  /* Green-black: the dark sections lean into a deep verdigris-tinted black
+     ("dark green and black") rather than a neutral near-black. */
+  --void: #060a09;
   --void-2: #6e7674;
-  --void-rule: #1b1f21;
+  --void-rule: #17201d;
   --v-bright: #3da588;
   --canvas: var(--chalk);
   --text: var(--ink);
