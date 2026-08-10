@@ -641,26 +641,6 @@ if (g && ST) {
   }
 
   /* ------------------------------------------------------------------ *
-   * LEDGER TICKER — a live governed-trail marquee pinned to the bottom.
-   * CSS animates the scroll (@keyframes flow); JS just fills + refreshes the
-   * content. Paused under reduced motion (CSS sets animation:none there).
-   * ------------------------------------------------------------------ */
-  function initTicker() {
-    const flow = $('flow');
-    if (!flow) return;
-    const ACTS = [
-      'action signed', 'scope checked', 'egress denied', 'approval recorded',
-      'credential rotated', 'record verified', 'policy re-checked',
-    ];
-    const items = () =>
-      Array.from({ length: 16 }, () =>
-        '<span>' + now() + ' · ' + ACTS[(Math.random() * ACTS.length) | 0]! + ' · <b>' + rnd(10) + '</b></span>'
-      ).join('');
-    flow.innerHTML = items() + items(); // doubled → seamless -50% marquee loop
-    if (!RM) setInterval(() => { flow.innerHTML = items() + items(); }, 48000);
-  }
-
-  /* ------------------------------------------------------------------ *
    * OBJECTION WALL — pinned scrub. The two setup lines rise, dim; the
    * questions every security team asks scatter in from random; the big
    * question lands; all dim; the answer resolves. Idle-drift per question
@@ -737,7 +717,6 @@ if (g && ST) {
    * ------------------------------------------------------------------ */
   initArtifacts();
   initHeroField();
-  initTicker();
   initWall();
   initProofRail();
   initDeckScroll();

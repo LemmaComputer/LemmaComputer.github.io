@@ -155,55 +155,6 @@ p {
   fill: none;
 }
 
-/* ---- Ledger ticker ----
-   A live governed-trail marquee pinned to the bottom of every screen. Reads
-   as a system status bar even on this light surface: a dark translucent rail,
-   monospace, with signed hashes tinted --v-bright. JS fills #flow (doubled)
-   and the marquee slides it -50% forever; RM freezes it (animation:none). */
-#strip {
-  position: fixed;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  height: 26px;
-  z-index: 9990;
-  overflow: hidden;
-  pointer-events: none;
-  display: flex;
-  align-items: center;
-  background: color-mix(in srgb, var(--void) 82%, transparent);
-  border-top: 1px solid color-mix(in srgb, var(--v-bright) 22%, transparent);
-  backdrop-filter: blur(6px);
-  -webkit-backdrop-filter: blur(6px);
-}
-.flow {
-  display: inline-flex;
-  flex: none;
-  white-space: nowrap;
-  will-change: transform;
-  animation: flow 62s linear infinite;
-}
-#strip span {
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 10.5px;
-  letter-spacing: 0.02em;
-  color: color-mix(in srgb, #e9ece8 62%, transparent);
-  padding: 0 1.4em;
-  flex: none;
-}
-#strip b {
-  font-weight: 500;
-  color: var(--v-bright);
-}
-@keyframes flow {
-  from {
-    transform: translateX(0);
-  }
-  to {
-    transform: translateX(-50%);
-  }
-}
-
 /* ---- Objection wall ----
    A tall section (#wall) with a sticky full-viewport stage. Two setup lines
    (.wl) rise, dim; scattered objections (.q, JS-injected) fade in from random;
@@ -520,11 +471,14 @@ section {
 h1.hero-h {
   margin: 0;
 }
-/* ---- Hero "wavy" contour field (decorative backdrop) ----
-   Lives inside the hero section at z:0 — behind .wrap (z:2), above the fixed
-   #artifacts glyph field (fixed z:0). Clipped to the hero box and masked to
-   fade top+bottom so it melts into the paper. Scrolls away with the section.
-   .hero-field is the element GSAP parallaxes toward the cursor. */
+/* ---- Hero: dark "energy field" backdrop (decorative) ----
+   The hero section is .void (near-black #08090a) so this field can actually
+   bloom — the Trident read: one confident, atmospheric verdigris glow field on
+   black, not faint smudges on paper. The dark section bg also covers the fixed
+   #artifacts glyphs, so the hero reads clean. Field lives inside the hero at
+   z:0 — behind .wrap (z:2). Clipped to the hero box, masked to fade top+bottom
+   so it melts into the black. Scrolls away with the section. .hero-field is the
+   element GSAP parallaxes toward the cursor. */
 .hero-field {
   position: absolute;
   inset: 0;
@@ -532,8 +486,8 @@ h1.hero-h {
   overflow: hidden;
   pointer-events: none;
   will-change: transform;
-  -webkit-mask-image: linear-gradient(180deg, transparent 0%, #000 16%, #000 84%, transparent 100%);
-  mask-image: linear-gradient(180deg, transparent 0%, #000 16%, #000 84%, transparent 100%);
+  -webkit-mask-image: linear-gradient(180deg, transparent 0%, #000 14%, #000 88%, transparent 100%);
+  mask-image: linear-gradient(180deg, transparent 0%, #000 14%, #000 88%, transparent 100%);
 }
 .hf-waves {
   position: absolute;
@@ -541,40 +495,60 @@ h1.hero-h {
   width: 100%;
   height: 100%;
 }
+/* Contour lines — brighter verdigris now that they sit on black, so they read
+   as an intentional signal field rather than noise. */
 .hf-line {
   fill: none;
-  stroke: var(--verdigris);
+  stroke: var(--v-bright);
   stroke-width: 1;
-  opacity: 0.15;
+  opacity: 0.22;
   vector-effect: non-scaling-stroke;
   will-change: transform;
   transform-box: fill-box;
   transform-origin: center;
 }
-/* Soft drifting glow blooms behind the contour lines. */
+/* Big, confident drifting glow blooms — the volumetric depth Trident has.
+   On black we can push opacity + size hard; the verdigris reads as living light
+   rather than a faint tint. */
 .hf-glow {
   position: absolute;
   border-radius: 50%;
-  filter: blur(72px);
-  opacity: 0.55;
-  background: radial-gradient(circle, var(--glow), transparent 70%);
+  filter: blur(90px);
   will-change: transform;
 }
 .hf-glow-a {
-  width: 46vw;
-  height: 46vw;
-  max-width: 640px;
-  max-height: 640px;
-  top: -8%;
-  left: -6%;
+  width: 62vw;
+  height: 62vw;
+  max-width: 860px;
+  max-height: 860px;
+  top: -18%;
+  left: -12%;
+  opacity: 0.9;
+  background: radial-gradient(circle, rgb(61 165 136 / 0.5), transparent 68%);
 }
 .hf-glow-b {
-  width: 40vw;
-  height: 40vw;
-  max-width: 560px;
-  max-height: 560px;
-  bottom: -10%;
-  right: -4%;
+  width: 52vw;
+  height: 52vw;
+  max-width: 720px;
+  max-height: 720px;
+  bottom: -20%;
+  right: -8%;
+  opacity: 0.7;
+  background: radial-gradient(circle, rgb(46 128 106 / 0.42), transparent 70%);
+}
+/* Dark-hero legibility fixes: the .void section flips the H1/lede/mark light for
+   free (via var(--text)), but a few hard-coded light-surface colours need to be
+   lifted for the near-black canvas. */
+.hero-void .hero-mark {
+  color: #8a9290;
+}
+.hero-void .shot-cap {
+  color: #8a9290;
+}
+/* The always-light screenshot card floats brighter on black — deepen its cast
+   shadow so it reads as lifted, not pasted-on. */
+.hero-void .shot {
+  box-shadow: 0 1px 0 rgb(0 0 0 / 0.04), 0 40px 90px -46px rgb(0 0 0 / 0.85);
 }
 /* Each word is its own span so motion.ts can rise them in behind a line mask.
    inline-block is required for the yPercent transform; &nbsp; inside each span
@@ -1645,11 +1619,10 @@ footer {
   }
   .hf-glow {
     animation: none !important;
-    opacity: 0.3;
   }
   .hf-line {
     transform: none !important;
-    opacity: 0.1;
+    opacity: 0.18;
   }
   /* Shot deck: no pin, no pan. Stack the shots in flow (single column, rail
      below) and show every feature so the whole tour reads statically. */

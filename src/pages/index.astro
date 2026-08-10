@@ -141,10 +141,6 @@ const heroWaves: string[] = Array.from({ length: HF_ROWS }, (_, i) => {
     <div class="depth" id="d1"></div><div class="depth" id="d2"></div><div class="depth" id="d3"></div>
   </div>
 
-  {/* Live governed-trail ticker pinned to the bottom edge (initTicker). A
-      running record of signed actions — decorative, paused under reduced motion. */}
-  <div id="strip" aria-hidden="true"><div class="flow" id="flow"></div></div>
-
   {/* Scroll-progress hairline — decorative, driven by ScrollTrigger. */}
   <div class="scrollbar" id="scrollbar" aria-hidden="true"></div>
 
@@ -163,7 +159,7 @@ const heroWaves: string[] = Array.from({ length: HF_ROWS }, (_, i) => {
 
   <main id="top">
     <!-- 1 · HERO ------------------------------------------------------------ -->
-    <section class="panel center">
+    <section class="panel center void hero-void">
       {/* Interactive "wavy" contour field — flowing verdigris contour lines +
           two soft drifting glow blooms, behind the hero copy (z:0 inside the
           section, above the fixed #artifacts field, below .wrap at z:2). It

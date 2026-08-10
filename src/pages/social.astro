@@ -1,0 +1,468 @@
+---
+// Off-site export page: six 1200×1200 cards for a LinkedIn carousel, in the
+// LemmaComputer design language (Newsreader / Inter / JetBrains Mono, mineral
+// verdigris on paper + one dark "void" tension card). Not linked from the site,
+// excluded from the QA gate. Each `.card` is exactly 1200×1200 so it screenshots
+// 1:1. Static — no motion.ts, no GSAP. View at /social/ and shoot each card.
+import { site } from '../config/site';
+const gh = 'github.com/ONE-Computer/LemmaComputer';
+---
+
+<!doctype html>
+<html lang="en" data-theme="light">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,200;0,6..72,300;0,6..72,400;0,6..72,500;1,6..72,300&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
+    <title>LemmaComputer — social cards</title>
+    <style is:global>
+      :root {
+        --ink: #15181a;
+        --graphite: #5c6462;
+        --rule: #d6dad6;
+        --chalk: #f3f5f2;
+        --paper: #fff;
+        --verdigris: #1e6b57;
+        --v-bright: #2f9077;
+        --amber: #b8862b;
+        --oxide: #9e382b;
+        --void: #0d0f10;
+        --void-paper: #16191b;
+        --void-text: #e9ece8;
+        --void-text-2: #8a9290;
+        --void-rule: #232829;
+        --void-verdigris: #3da588;
+        --void-amber: #d8a441;
+        --serif: 'Newsreader', Georgia, serif;
+        --sans: 'Inter', system-ui, sans-serif;
+        --mono: 'JetBrains Mono', ui-monospace, monospace;
+      }
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      html, body { background: #4a4f4d; }
+      body {
+        font-family: var(--sans);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 40px;
+        padding: 40px;
+        -webkit-font-smoothing: antialiased;
+        text-rendering: optimizeLegibility;
+      }
+      /* Isolation mode for clean 1:1 export: body.solo shows only the targeted
+         card, no padding/gap, page background matches so no gray gutter leaks
+         into a viewport screenshot. Toggled by the inline script on #card-N. */
+      body.solo { padding: 0; gap: 0; background: transparent; }
+      body.solo .card { display: none; }
+      body.solo .card.is-solo { display: flex; }
+
+      /* ---- the export unit: exactly 1200×1200 ---- */
+      .card {
+        width: 1200px;
+        height: 1200px;
+        position: relative;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        background: var(--chalk);
+        color: var(--ink);
+        padding: 96px 100px;
+      }
+      .card.dark {
+        background: var(--void);
+        color: var(--void-text);
+      }
+      /* subtle paper grain / vignette so cards don't read as flat slabs */
+      .card::after {
+        content: '';
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+        background: radial-gradient(120% 90% at 50% 0%, transparent 60%, rgb(0 0 0 / 0.03));
+      }
+      .card.dark::after {
+        background: radial-gradient(120% 90% at 50% 0%, transparent 55%, rgb(0 0 0 / 0.35));
+      }
+
+      /* ---- shared type ---- */
+      .kicker {
+        font-family: var(--mono);
+        font-size: 22px;
+        font-weight: 500;
+        letter-spacing: 0.22em;
+        text-transform: uppercase;
+        color: var(--verdigris);
+      }
+      .dark .kicker { color: var(--void-verdigris); }
+      .kicker .dot { color: var(--graphite); }
+      .dark .kicker .dot { color: var(--void-text-2); }
+
+      h1 {
+        font-family: var(--serif);
+        font-weight: 300;
+        letter-spacing: -0.015em;
+        line-height: 1.02;
+        color: var(--ink);
+      }
+      .dark h1 { color: var(--void-text); }
+      .lede {
+        font-size: 34px;
+        line-height: 1.42;
+        color: var(--graphite);
+        font-weight: 400;
+        max-width: 20ch;
+      }
+      .dark .lede { color: var(--void-text-2); }
+      .em { color: var(--verdigris); font-weight: 500; }
+      .dark .em { color: var(--void-verdigris); }
+
+      .spacer { flex: 1; }
+
+      /* brand lockup pinned bottom-left of every card */
+      .brand {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        font-family: var(--sans);
+        font-weight: 700;
+        font-size: 26px;
+        letter-spacing: -0.01em;
+      }
+      .brand .mark {
+        width: 20px; height: 20px;
+        background: var(--verdigris);
+        border-radius: 3px;
+      }
+      .dark .brand .mark { background: var(--void-verdigris); }
+      .brand .of {
+        font-family: var(--mono);
+        font-weight: 400;
+        font-size: 18px;
+        letter-spacing: 0.04em;
+        color: var(--graphite);
+        text-transform: none;
+      }
+      .dark .brand .of { color: var(--void-text-2); }
+
+      .footer-row {
+        display: flex;
+        align-items: flex-end;
+        justify-content: space-between;
+        gap: 24px;
+      }
+      .pagemark {
+        font-family: var(--mono);
+        font-size: 20px;
+        letter-spacing: 0.1em;
+        color: var(--graphite);
+      }
+      .dark .pagemark { color: var(--void-text-2); }
+
+      /* hairline rule */
+      .rule { height: 1px; background: var(--rule); border: 0; }
+      .dark .rule { background: var(--void-rule); }
+
+      /* =========================================================
+         CARD 1 — HOOK (dark)
+      ========================================================= */
+      .c-hook h1 { font-size: 96px; max-width: 15ch; margin-top: 8px; }
+      .c-hook .q-scatter {
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+      }
+      .c-hook .q {
+        position: absolute;
+        font-family: var(--serif);
+        font-style: italic;
+        font-weight: 300;
+        font-size: 30px;
+        color: var(--void-text-2);
+        opacity: 0.5;
+        white-space: nowrap;
+      }
+      .c-hook .q1 { top: 250px; right: 90px; }
+      .c-hook .q2 { top: 336px; right: 150px; }
+      .c-hook .q3 { top: 250px; left: 100px; }
+      .c-hook .q4 { top: 422px; right: 96px; }
+
+      /* =========================================================
+         CARD 2 — THE IDEA (light)
+      ========================================================= */
+      .c-idea h1 { font-size: 88px; max-width: 13ch; margin-top: 8px; }
+      .c-idea .lede { margin-top: 40px; font-size: 36px; max-width: 26ch; }
+
+      /* =========================================================
+         CARD 3 — ANY AGENT → ONE COMPUTER (light, diagram)
+      ========================================================= */
+      .c-agents h1 { font-size: 78px; max-width: 12ch; }
+      .diagram {
+        margin-top: 64px;
+        display: flex;
+        align-items: center;
+        gap: 40px;
+      }
+      .agent-stack { display: flex; flex-direction: column; gap: 18px; }
+      .chip {
+        font-family: var(--mono);
+        font-size: 26px;
+        font-weight: 500;
+        padding: 20px 34px;
+        border: 1.5px solid var(--rule);
+        border-radius: 12px;
+        background: var(--paper);
+        min-width: 240px;
+        text-align: center;
+      }
+      .chip.ghost { color: var(--graphite); font-style: italic; border-style: dashed; }
+      .arrow {
+        font-family: var(--mono);
+        color: var(--verdigris);
+        font-size: 40px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 6px;
+      }
+      .arrow .lbl { font-size: 16px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--graphite); }
+      .box {
+        border: 2px solid var(--verdigris);
+        border-radius: 18px;
+        padding: 46px 48px;
+        background: rgb(30 107 87 / 0.05);
+        box-shadow: 0 0 0 6px rgb(30 107 87 / 0.04);
+      }
+      .box .box-tag { font-family: var(--mono); font-size: 18px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--verdigris); }
+      .box .box-title { font-family: var(--serif); font-size: 42px; font-weight: 400; margin-top: 10px; line-height: 1.1; }
+      .box .box-sub { font-family: var(--mono); font-size: 20px; color: var(--graphite); margin-top: 14px; }
+
+      /* =========================================================
+         CARD 4 — FOUR GUARDRAILS (light, grid)
+      ========================================================= */
+      .c-rails h1 { font-size: 76px; max-width: 14ch; }
+      .grid {
+        margin-top: 64px;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 28px;
+      }
+      .cell {
+        border: 1.5px solid var(--rule);
+        border-radius: 14px;
+        padding: 38px 40px;
+        background: var(--paper);
+      }
+      .cell .n { font-family: var(--mono); font-size: 20px; color: var(--verdigris); letter-spacing: 0.1em; }
+      .cell h3 { font-family: var(--serif); font-weight: 400; font-size: 40px; margin-top: 12px; line-height: 1.05; }
+      .cell p { font-size: 24px; line-height: 1.45; color: var(--graphite); margin-top: 14px; }
+
+      /* =========================================================
+         CARD 5 — SIGNED TRAIL (dark, ledger)
+      ========================================================= */
+      .c-trail h1 { font-size: 82px; max-width: 12ch; }
+      .c-trail .lede { color: var(--void-text-2); margin-top: 28px; max-width: 30ch; }
+      .ledger {
+        margin-top: 56px;
+        border: 1px solid var(--void-rule);
+        border-radius: 14px;
+        overflow: hidden;
+        font-family: var(--mono);
+        font-size: 24px;
+      }
+      .ledger .row {
+        display: flex;
+        align-items: center;
+        gap: 28px;
+        padding: 26px 34px;
+        border-bottom: 1px solid var(--void-rule);
+        color: var(--void-text);
+      }
+      .ledger .row:last-child { border-bottom: 0; }
+      .ledger .time { color: var(--void-text-2); font-size: 21px; }
+      .ledger .hash { color: var(--void-verdigris); }
+      .ledger .verb { flex: 1; }
+      .ledger .sig { color: var(--void-amber); font-size: 21px; }
+
+      /* =========================================================
+         CARD 6 — OPEN SOURCE CTA (light)
+      ========================================================= */
+      .c-cta { align-items: flex-start; }
+      .c-cta h1 { font-size: 92px; max-width: 12ch; }
+      .c-cta .lede { margin-top: 40px; font-size: 34px; max-width: 26ch; }
+      .repo {
+        margin-top: 56px;
+        display: inline-flex;
+        align-items: center;
+        gap: 18px;
+        font-family: var(--mono);
+        font-size: 30px;
+        font-weight: 500;
+        color: var(--ink);
+        border: 2px solid var(--ink);
+        border-radius: 14px;
+        padding: 24px 36px;
+      }
+      .repo .gh {
+        width: 34px; height: 34px;
+        display: inline-block;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- ============ CARD 1 · HOOK (dark) ============ -->
+    <section class="card dark c-hook" data-card="1">
+      <div class="q-scatter" aria-hidden="true">
+        <span class="q q1">Which identity signed it?</span>
+        <span class="q q2">Was that inside policy?</span>
+        <span class="q q3">Who approved the egress?</span>
+        <span class="q q4">Which agent touched production?</span>
+      </div>
+      <p class="kicker">The accountability gap</p>
+      <div class="spacer"></div>
+      <h1>Can you answer for<br />everything your<br />agents do?</h1>
+      <div class="spacer"></div>
+      <div class="footer-row">
+        <div class="brand"><span class="mark"></span>LemmaComputer</div>
+        <span class="pagemark">01 / 06</span>
+      </div>
+    </section>
+
+    <!-- ============ CARD 2 · THE IDEA (light) ============ -->
+    <section class="card c-idea" data-card="2">
+      <p class="kicker">The idea</p>
+      <div class="spacer"></div>
+      <h1>Give agents a real<br />computer — and a<br /><span class="em">paper trail.</span></h1>
+      <p class="lede">
+        An open-source blueprint for running AI agents on a governed
+        computer, where every action is bounded, checked, and signed.
+      </p>
+      <div class="spacer"></div>
+      <div class="footer-row">
+        <div class="brand"><span class="mark"></span>LemmaComputer</div>
+        <span class="pagemark">02 / 06</span>
+      </div>
+    </section>
+
+    <!-- ============ CARD 3 · ANY AGENT → ONE COMPUTER (light) ============ -->
+    <section class="card c-agents" data-card="3">
+      <p class="kicker">Swap the agent <span class="dot">·</span> keep the guardrails</p>
+      <h1 style="margin-top:20px">Any agent.<br />One governed<br />computer.</h1>
+      <div class="diagram">
+        <div class="agent-stack">
+          <div class="chip">Claude</div>
+          <div class="chip">Codex</div>
+          <div class="chip">Hermes</div>
+          <div class="chip ghost">…or your own</div>
+        </div>
+        <div class="arrow">
+          <span class="lbl">runs in</span>
+          <span>→</span>
+        </div>
+        <div class="box">
+          <span class="box-tag">Governed sandbox</span>
+          <div class="box-title">One real<br />Ubuntu desktop</div>
+          <div class="box-sub">browser · shell · files · apps</div>
+        </div>
+      </div>
+      <div class="spacer"></div>
+      <div class="footer-row">
+        <div class="brand"><span class="mark"></span>LemmaComputer</div>
+        <span class="pagemark">03 / 06</span>
+      </div>
+    </section>
+
+    <!-- ============ CARD 4 · FOUR GUARDRAILS (light) ============ -->
+    <section class="card c-rails" data-card="4">
+      <p class="kicker">Four guardrails, always on</p>
+      <h1 style="margin-top:20px">Freedom inside,<br />control at the edge.</h1>
+      <div class="grid">
+        <div class="cell">
+          <span class="n">01</span>
+          <h3>Managed workspace</h3>
+          <p>Each agent runs in an isolated VM with a real desktop — not a chat box.</p>
+        </div>
+        <div class="cell">
+          <span class="n">02</span>
+          <h3>Egress firewall</h3>
+          <p>Reaching the web is default-deny. Unmatched egress never leaves.</p>
+        </div>
+        <div class="cell">
+          <span class="n">03</span>
+          <h3>Tool approvals</h3>
+          <p>High-risk tools stay blocked until a human reviews and approves.</p>
+        </div>
+        <div class="cell">
+          <span class="n">04</span>
+          <h3>Signed trail</h3>
+          <p>What passes lands in the Trail — signed, timestamped, replayable.</p>
+        </div>
+      </div>
+      <div class="spacer"></div>
+      <div class="footer-row">
+        <div class="brand"><span class="mark"></span>LemmaComputer</div>
+        <span class="pagemark">04 / 06</span>
+      </div>
+    </section>
+
+    <!-- ============ CARD 5 · SIGNED TRAIL (dark) ============ -->
+    <section class="card dark c-trail" data-card="5">
+      <p class="kicker">Everything is recorded</p>
+      <h1 style="margin-top:20px">If it happened,<br />it's signed.</h1>
+      <p class="lede">Every action an agent takes is captured as a signed, timestamped ledger entry — an audit trail you can actually answer with.</p>
+      <div class="ledger">
+        <div class="row"><span class="time">09:14:02</span><span class="verb">policy re-checked</span><span class="hash">a8dc5ec2c0</span></div>
+        <div class="row"><span class="time">09:14:07</span><span class="verb">egress denied · unmatched host</span><span class="sig">✎ signed</span></div>
+        <div class="row"><span class="time">09:14:19</span><span class="verb">tool approved · human review</span><span class="hash">2db7320a15</span></div>
+        <div class="row"><span class="time">09:14:31</span><span class="verb">action recorded · verified</span><span class="sig">✎ signed</span></div>
+      </div>
+      <div class="spacer"></div>
+      <div class="footer-row">
+        <div class="brand"><span class="mark"></span>LemmaComputer</div>
+        <span class="pagemark">05 / 06</span>
+      </div>
+    </section>
+
+    <!-- ============ CARD 6 · OPEN SOURCE CTA (light) ============ -->
+    <section class="card c-cta" data-card="6">
+      <p class="kicker">Open-source research</p>
+      <div class="spacer"></div>
+      <h1>Accountable AI,<br />in the open.</h1>
+      <p class="lede">LemmaComputer is an open research project. Read the design, run it, and help shape how we hold agents accountable.</p>
+      <div class="repo">
+        <svg class="gh" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+        {gh}
+      </div>
+      <div class="spacer"></div>
+      <div class="footer-row">
+        <div class="brand"><span class="mark"></span>LemmaComputer<span class="of">a product of LemmaLabs</span></div>
+        <span class="pagemark">06 / 06</span>
+      </div>
+    </section>
+    <script is:inline>
+      // Export helper: /social/#card-3 isolates card 3 in a bare 1200×1200
+      // frame (no gray gutter) for a clean viewport screenshot. No hash = the
+      // full contact sheet of all six.
+      (function () {
+        function apply() {
+          var m = /card-(\d)/.exec(location.hash);
+          document.querySelectorAll('.card').forEach(function (c) { c.classList.remove('is-solo'); });
+          if (m) {
+            document.body.classList.add('solo');
+            var el = document.querySelector('.card[data-card="' + m[1] + '"]');
+            if (el) el.classList.add('is-solo');
+          } else {
+            document.body.classList.remove('solo');
+          }
+        }
+        addEventListener('hashchange', apply);
+        apply();
+      })();
+    </script>
+  </body>
+</html>

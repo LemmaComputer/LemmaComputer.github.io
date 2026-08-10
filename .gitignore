@@ -19,3 +19,6 @@ npm-debug.log*
 
 # Old git history backup — never publish
 .git.backup-*/
+
+# LinkedIn card exports (regenerate from /social)
+social-export/
