@@ -1314,9 +1314,14 @@ h1.hero-h {
   align-items: center;
   overflow: hidden;
 }
-/* Stack the two shots and crossfade between them (initProofRail drives
-   opacity). The old side-by-side horizontal pan read as a confusing carousel;
-   a fade keeps the two proof states clean and in place. */
+/* Blackjack DEAL: the two shots are stacked as cards on a table. The base card
+   (first) sits on the stack; the second is dealt onto it — flung in from the
+   lower-right, tilted, then rotated flat to land on top (initProofRail timeline
+   drives transform + opacity). z-index keeps the dealt card above the base;
+   perspective on the stage gives the flight a hint of depth. */
+.proof-stage {
+  perspective: 1600px;
+}
 .proof-track {
   position: relative;
   width: 100%;
@@ -1328,16 +1333,24 @@ h1.hero-h {
   display: flex;
   flex-direction: column;
   justify-content: center;
-  will-change: opacity;
+  will-change: transform, opacity;
 }
 .proof-track .shot-desktop:first-child {
   position: relative;
+  z-index: 1;
 }
-/* Keep each shot within the fold so nothing clips top/bottom while pinned. */
+.proof-track .shot-desktop:nth-child(2) {
+  z-index: 2;
+}
+/* Keep each shot within the fold so nothing clips top/bottom while pinned, and
+   give each the physical read of a card: rounded corners + a soft drop shadow
+   so the dealt shot lifts off the base and lands with weight. */
 .proof-track .shot-desktop img {
   max-height: 74vh;
   width: auto;
   margin: 0 auto;
+  border-radius: 12px;
+  box-shadow: 0 24px 60px -18px rgba(0, 0, 0, 0.7), 0 4px 14px -6px rgba(0, 0, 0, 0.5);
 }
 
 /* ---- Scroll-progress hairline ---- */

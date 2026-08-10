@@ -46,7 +46,7 @@ assert(!html.includes('href="#"'), 'Placeholder href="#" found in the production
 const requiredCopy = [
   'Any agent.',
   'One governed computer.',
-  'onecomputer.metech.dev',
+  'lemmacomputer',
   'Claude',
   'Codex',
   'Hermes',

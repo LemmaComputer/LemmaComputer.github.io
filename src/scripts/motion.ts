@@ -284,26 +284,32 @@ if (g && ST) {
     const shots = qsa('.shot-desktop', track);
     if (shots.length < 2) return;
     const [first, second] = shots;
-    g.set(first!, { autoAlpha: 1 });
-    g.set(second!, { autoAlpha: 0 });
 
-    ST.create({
-      trigger: stage,
-      start: 'top top',
-      end: '+=120%',
-      pin: stage,
-      scrub: 0.6,
-      invalidateOnRefresh: true,
-      refreshPriority: 20, // refresh after arch (30), before deck (10) — DOM order
-      // Crossfade the two proof shots in place instead of panning horizontally:
-      // the second fades up over the first across the pin. Linear on progress so
-      // pin-start is unambiguously shot 1 and pin-end is shot 2.
-      onUpdate: (self: any) => {
-        const t = self.progress;
-        g.set(second!, { autoAlpha: t });
-        g.set(first!, { autoAlpha: 1 - t });
+    // Blackjack DEAL: the base card (shot 1) is already on the table; the second
+    // shot is dealt onto it — it starts flung off toward the lower-right, tilted
+    // and small (a card mid-flight), then slides in, rotates flat and scales up
+    // to land square on the stack. The base card recedes a touch as it's covered,
+    // reading as "one card dealt on top of another" rather than a crossfade.
+    g.set(second!, { autoAlpha: 0, xPercent: 46, yPercent: 30, rotation: 13, scale: 0.82, transformOrigin: '50% 60%' });
+    g.set(first!, { autoAlpha: 1, xPercent: 0, yPercent: 0, rotation: 0, scale: 1 });
+
+    const tl = g.timeline({
+      scrollTrigger: {
+        trigger: stage,
+        start: 'top top',
+        end: '+=140%',
+        pin: stage,
+        scrub: 0.7,
+        invalidateOnRefresh: true,
+        refreshPriority: 20, // refresh after arch (30), before deck (10) — DOM order
       },
     });
+    // Card leaves the "deck" and becomes visible almost immediately, then flies
+    // in over most of the scroll and settles flat at the end (back-ease landing).
+    tl.to(second!, { autoAlpha: 1, duration: 0.12 }, 0)
+      .to(second!, { xPercent: 0, yPercent: 0, rotation: 0, scale: 1, ease: 'back.out(1.1)', duration: 1 }, 0)
+      // Base card sinks slightly under the newly-dealt one, then holds.
+      .to(first!, { scale: 0.965, yPercent: 2, autoAlpha: 0.82, ease: 'power1.inOut', duration: 1 }, 0);
   }
 
   /* ------------------------------------------------------------------ *
