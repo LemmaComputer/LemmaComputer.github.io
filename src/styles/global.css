@@ -2240,27 +2240,11 @@ footer {
   .arch-socket.chips-in .arch-chip-ghost {
     opacity: 0.6;
   }
-}
-@media (max-width: 380px) {
-  .wrap {
-    padding: 0 16px;
-  }
-  .shot-url {
-    font-size: 10px;
-    padding: 5px 10px;
-  }
-  /* On the narrowest phones two side-by-side CTAs can't both fit a full label,
-     so stack them full-width rather than letting the row set a min-width wider
-     than the viewport. */
-  .cta-row {
-    flex-direction: column;
-    align-items: stretch;
-  }
-  .cta-row .btn {
-    text-align: center;
-  }
-  /* Approval demo: single column. The two-column stage collapses so the
-     scenario cards, paused request, and approver phone stack in order. */
+  /* Approval demo: single column. The two-column split stage collapses so the
+     scenario cards, paused request, and approver phone stack in reading order.
+     Must fire at the same 900px breakpoint as every other section — at wider
+     phones the desktop 2-col template crushes the left column to ~0 and wraps
+     the request text one word per line. */
   .approval-stage {
     grid-template-columns: 1fr;
     gap: 20px;
@@ -2282,6 +2266,56 @@ footer {
   .ap-facts,
   .ap-track {
     grid-template-columns: 1fr 1fr;
+  }
+  /* Objection wall: collapse to one calm static screen on phones. The desktop
+     effect is a 340vh sticky scroll that scatters the .q objections and scrubs
+     to the answer — but on a phone that reads as ~2000px of empty black scroll
+     with only the setup lines visible. So here (matching the reduced-motion
+     fallback, and the "mobile falls back to a static answer" intent) we drop the
+     340vh height, stop the sticky pin, hide the scatter field, and show the two
+     setup lines + the answer as one statement in normal flow. initWall also
+     skips its scrub timeline at this width so GSAP can't leave a .q mid-fade. */
+  #wall {
+    height: auto !important;
+  }
+  .wall-stage {
+    position: static;
+    height: auto;
+    min-height: 0;
+    flex-direction: column;
+    gap: 22px;
+    padding: 84px 0;
+  }
+  .q-field {
+    display: none !important;
+  }
+  .wl {
+    opacity: 1 !important;
+    transform: none !important;
+  }
+  .q-answer {
+    position: static;
+    opacity: 1 !important;
+    transform: none !important;
+  }
+}
+@media (max-width: 380px) {
+  .wrap {
+    padding: 0 16px;
+  }
+  .shot-url {
+    font-size: 10px;
+    padding: 5px 10px;
+  }
+  /* On the narrowest phones two side-by-side CTAs can't both fit a full label,
+     so stack them full-width rather than letting the row set a min-width wider
+     than the viewport. */
+  .cta-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .cta-row .btn {
+    text-align: center;
   }
 }
 

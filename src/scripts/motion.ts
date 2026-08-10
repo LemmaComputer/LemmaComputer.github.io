@@ -879,7 +879,12 @@ void main(){
     bigQ.style.top = '50%';
     qField.appendChild(bigQ);
 
-    if (RM) return; // static setup-lines + answer come from the CSS RM override
+    // Static setup-lines + answer come from the CSS. Skip the scrub timeline
+    // under reduced motion AND on mobile: at ≤900px the section collapses to
+    // height:auto (see the mobile block in global.css), so a scroll-scrubbed
+    // pin would have no travel and could leave a .q mid-fade. The q-field is
+    // display:none there anyway; this just avoids the dead ScrollTrigger.
+    if (RM || MOB) return;
 
     const qEls = qsa('.q:not(.big)', qField);
     g.timeline({ scrollTrigger: { trigger: '#wall', start: 'top top', end: 'bottom bottom', scrub: 0.7 } })
