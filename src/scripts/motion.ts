@@ -652,26 +652,29 @@ void main(){
   vec2 p=uv*${SCALE.toFixed(2)}*vec2(1.0,${ANISO.toFixed(2)});
 
   // Cursor ACTIVATION field: a soft, tight falloff around the pointer (uMouse,
-  // in this same y-normalized uv space), 1 at the cursor → 0 at ~0.28 radius,
+  // in this same y-normalized uv space), 1 at the cursor → 0 at ~0.20 radius,
   // scaled by uMouseGlow (eases in/out). Where act>0 the actual flow comes alive
   // — it does NOT add a separate glow disc; it gently drives the real ridge
-  // structure locally. Kept restrained so the H1 stays fully legible over it.
-  float act = uMouseGlow * smoothstep(0.28, 0.0, distance(uv, uMouse));
+  // structure locally. Tightened (0.28→0.20) so the response reads as a focused
+  // shimmer under the cursor rather than a broad wave. H1 stays fully legible.
+  float act = uMouseGlow * smoothstep(0.20, 0.0, distance(uv, uMouse));
 
-  // The base drift plus a faint LOCAL quickening: near the cursor the flow's own
-  // time advances a touch faster, so the folds there stir subtly to life while
-  // the rest of the field keeps its calm pace. The field reacting, not an overlay.
-  float t=uTime*(${SPEED.toFixed(3)} + 0.035*act);
+  // The base drift plus a WHISPER of local quickening: near the cursor the flow's
+  // own time advances a hair faster. Trimmed ~65% (0.035→0.012) so the folds no
+  // longer visibly ripple/stir under the pointer — the reaction is now carried by
+  // contrast/shimmer (ridge amp + warmth below), not by moving the field.
+  float t=uTime*(${SPEED.toFixed(3)} + 0.012*act);
   vec2 r; float f=warp(p,t,r);
   vec2 L=normalize(vec2(${RAKE.toFixed(2)},${(1 - RAKE).toFixed(2)})+vec2(0.6,0.2));
   float eps=0.55; vec2 ra; float fL=warp(p+eps*L,t,ra);
   float ridge=(fL-f)/eps; ridge=smoothstep(-1.2,1.4,ridge);
   float sheet=smoothstep(-0.7,0.8,f);
 
-  // Activation lightly amplifies the ridge highlight that already exists here —
-  // the crests near the cursor catch a little more light and read crisper, so
-  // the flow lines themselves brighten rather than a flat pool washing over them.
-  float ridgeAmp = ridge * (1.0 + 0.45*act);
+  // Activation amplifies the ridge highlight that already exists here — the crests
+  // near the cursor catch more light and read crisper, so the flow lines themselves
+  // brighten rather than a flat pool washing over them. Nudged up (0.45→0.55): with
+  // the ripple trimmed, the reaction now leans on this contrast lift.
+  float ridgeAmp = ridge * (1.0 + 0.55*act);
   float shade=clamp(0.55*ridgeAmp + 0.55*sheet,0.0,1.0);
   shade=pow(shade,${CONTRAST.toFixed(2)});
   vec3 col=mix(uColorLo,uColorHi,shade); col=pow(col,vec3(1.1));
@@ -679,8 +682,9 @@ void main(){
 
   // A whisper of extra warmth that tracks the RIDGES within the activation zone
   // (weighted by ridge, so valleys stay dark) — the live flow shimmers along its
-  // own crests rather than glowing as a uniform disc.
-  col += uColorHi * act * ridge * 0.12;
+  // own crests rather than glowing as a uniform disc. Slightly stronger (0.12→0.16)
+  // to carry the hover response now that the ripple is dialled back.
+  col += uColorHi * act * ridge * 0.16;
 
   float gr=fract(sin(dot(gl_FragCoord.xy+t*57.0,vec2(12.9898,78.233)))*43758.5453);
   col+=(gr-0.5)*${GRAIN.toFixed(3)};
