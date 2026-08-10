@@ -915,10 +915,163 @@ void main(){
   }
 
   /* ------------------------------------------------------------------ *
+   * #approval — separation-of-duties demo.
+   * The agent's request is paused in the governed workspace and pushed to a
+   * separate approver's phone. Tapping Deny/Approve signs the exact request
+   * (did:webvh + ed25519) and returns a verifiable decision; the left step
+   * tracker advances as the decision travels + comes back. Scenario chips swap
+   * the request. All state lives in classes/text — the DOM ships in its resting
+   * (pending) state, so under reduced motion this early-returns and the scene
+   * still reads complete. GSAP is used only for small state transitions.
+   * ------------------------------------------------------------------ */
+  function initApprovalDemo() {
+    const maybeRoot = document.querySelector('[data-approval]') as HTMLElement | null;
+    if (!maybeRoot) return;
+    const root = maybeRoot; // non-null; closures below capture this narrowed binding
+
+    // The request panel and the phone both re-render from these. Keep the two
+    // views in sync (workspace copy is slightly fuller; phone copy is terser).
+    const SCENARIOS: Record<
+      string,
+      { title: string; by: string; dest: string; digest: string; deskDesc: string; phoneDesc: string; why: string }
+    > = {
+      export: {
+        title: 'Export customer report',
+        by: 'Research workspace',
+        dest: 'external.collab',
+        digest: '8F2A…9C11',
+        deskDesc: 'Claude wants to send a sensitive file to a destination outside the governed workspace.',
+        phoneDesc: 'An agent wants to send a sensitive file outside the company workspace.',
+        why: "Customer data can't leave the company without a human decision.",
+      },
+      prod: {
+        title: 'Change production config',
+        by: 'Ops workspace',
+        dest: 'prod.api',
+        digest: 'B41C…07E9',
+        deskDesc: 'Codex wants to push a configuration change to a live production service.',
+        phoneDesc: 'An agent wants to change a setting on a live production service.',
+        why: 'Production changes need a human to sign off before they ship.',
+      },
+      repo: {
+        title: 'Connect a private repo',
+        by: 'Build workspace',
+        dest: 'git.internal',
+        digest: '3D77…A2B0',
+        deskDesc: 'Hermes wants to grant the workspace read access to a private source repository.',
+        phoneDesc: 'An agent wants read access to a private source repository.',
+        why: 'Private code access is granted by a person, not by the agent itself.',
+      },
+    };
+
+    const chips = qsa('.ap-chip', root.parentElement ?? document);
+    const phoneReq = root.querySelector('[data-ap-phone-request]') as HTMLElement | null;
+    const phoneRes = root.querySelector('[data-ap-phone-result]') as HTMLElement | null;
+    const sentStep = root.querySelector('[data-step="sent"]') as HTMLElement | null;
+    const verifiedStep = root.querySelector('[data-step="verified"]') as HTMLElement | null;
+
+    const setText = (sel: string, value: string) => {
+      const el = root.querySelector(sel);
+      if (el) el.textContent = value;
+    };
+
+    function loadScenario(key: string) {
+      const s = SCENARIOS[key];
+      if (!s) return;
+      // Left request panel.
+      setText('[data-ap-title]', s.title);
+      setText('[data-ap-desc]', s.deskDesc);
+      setText('[data-ap-by]', s.by);
+      setText('[data-ap-dest]', s.dest);
+      setText('[data-ap-digest]', s.digest);
+      setText('[data-ap-why]', s.why);
+      // Phone request card.
+      setText('[data-ap-phone-title]', s.title);
+      setText('[data-ap-phone-desc]', s.phoneDesc);
+      setText('[data-ap-phone-by]', s.by);
+      setText('[data-ap-phone-digest]', s.digest);
+      reset();
+    }
+
+    // Return the scene to its pending resting state.
+    function reset() {
+      root.classList.remove('is-approved', 'is-denied');
+      if (phoneRes) {
+        phoneRes.hidden = true;
+        phoneRes.classList.remove('is-denied');
+      }
+      if (phoneReq) phoneReq.hidden = false;
+      sentStep?.classList.remove('is-complete');
+      verifiedStep?.classList.remove('is-complete');
+      setText('[data-ap-phone-sub]', 'Ready to decide');
+      setText('[data-ap-outcome-label]', 'STATUS');
+      setText('[data-ap-outcome-text]', 'Action paused · waiting for the approver');
+      if (!RM && phoneReq) g.fromTo(phoneReq, { opacity: 0.4 }, { opacity: 1, duration: 0.35, ease: 'power2.out' });
+    }
+
+    function decide(approved: boolean) {
+      // Step 1 — the request reaches the phone.
+      sentStep?.classList.add('is-complete');
+      setText('[data-ap-phone-sub]', 'Signing the decision…');
+
+      const commit = () => {
+        // Swap the phone to its signed-result face.
+        if (phoneReq) phoneReq.hidden = true;
+        if (phoneRes) {
+          phoneRes.hidden = false;
+          phoneRes.classList.toggle('is-denied', !approved);
+        }
+        setText('[data-ap-res-eyebrow]', 'DECISION SIGNED');
+        setText('[data-ap-res-title]', approved ? 'Approval signed' : 'Denial signed');
+        setText(
+          '[data-ap-res-desc]',
+          approved
+            ? 'The phone signed this exact request. LemmaComputer can verify the decision — it cannot change it.'
+            : "The phone signed a denial of this exact request. LemmaComputer can verify it — and the action stays blocked."
+        );
+        setText('[data-ap-phone-sub]', approved ? 'Decision signed' : 'Denial signed');
+
+        // Step 2 — the computer verifies the returned signature.
+        verifiedStep?.classList.add('is-complete');
+        root.classList.add(approved ? 'is-approved' : 'is-denied');
+        setText('[data-ap-outcome-label]', approved ? 'VERIFIED' : 'BLOCKED');
+        setText(
+          '[data-ap-outcome-text]',
+          approved
+            ? 'Approval verified · this action may continue once'
+            : 'Denial verified · this action stays blocked'
+        );
+
+        if (!RM && phoneRes) g.fromTo(phoneRes, { opacity: 0, y: 10 }, { opacity: 1, y: 0, duration: 0.45, ease: 'power3.out' });
+      };
+
+      // Under RM, commit instantly (no travel beat); otherwise let the "sent"
+      // step read for a moment before the signature lands.
+      if (RM) commit();
+      else g.delayedCall(0.5, commit);
+    }
+
+    chips.forEach((chip) => {
+      chip.addEventListener('click', () => {
+        chips.forEach((c) => {
+          c.classList.toggle('is-active', c === chip);
+          c.setAttribute('aria-pressed', String(c === chip));
+        });
+        loadScenario(chip.dataset.scenario || 'export');
+      });
+    });
+
+    root.querySelector('[data-ap-approve]')?.addEventListener('click', () => decide(true));
+    root.querySelector('[data-ap-deny]')?.addEventListener('click', () => decide(false));
+    root.querySelector('[data-ap-reset]')?.addEventListener('click', reset);
+  }
+
+  /* ------------------------------------------------------------------ *
    * INIT + ScrollTrigger robustness
    * ------------------------------------------------------------------ */
   initArtifacts();
   initHeroField();
+  initApprovalDemo();
   initWall();
   initProofRail();
   initDeckScroll();

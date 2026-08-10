@@ -1431,6 +1431,678 @@ footer {
   transform: none;
 }
 
+/* ==================================================================
+   #approval — separation-of-duties demo. Lives on a .void surface, so
+   every colour is a mineral token that re-tints on theme toggle:
+   verdigris (--v-bright / --verdigris) for the trusted/approved read,
+   amber for the paused/pending warning tone, oxide for a denial. The
+   whole thing ships in its resting state and reads correctly with no JS.
+   ================================================================== */
+#approval .approval-scenarios {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  max-width: 780px;
+  margin-top: 40px;
+}
+.ap-chip {
+  display: grid;
+  grid-template-columns: 34px 1fr;
+  column-gap: 11px;
+  align-items: center;
+  min-height: 66px;
+  padding: 12px 14px;
+  color: #9aa3a1;
+  border: 1px solid var(--void-rule);
+  border-radius: 3px;
+  background: rgb(255 255 255 / 0.02);
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.22s, background 0.22s, color 0.22s;
+}
+.ap-chip > span {
+  display: grid;
+  width: 34px;
+  height: 34px;
+  grid-row: span 2;
+  place-items: center;
+  border: 1px solid var(--void-rule);
+  border-radius: 3px;
+  background: rgb(0 0 0 / 0.2);
+}
+.ap-chip small {
+  align-self: end;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--void-2);
+}
+.ap-chip b {
+  align-self: start;
+  font-size: 13px;
+  font-weight: 500;
+  color: #cdd3d0;
+}
+.ap-chip:hover {
+  border-color: rgb(61 165 136 / 0.4);
+}
+.ap-chip.is-active {
+  color: var(--v-bright);
+  border-color: rgb(61 165 136 / 0.5);
+  background: rgb(61 165 136 / 0.08);
+}
+.ap-chip.is-active b {
+  color: #f3f5f2;
+}
+
+/* The playground: request panel · secure link · approver phone. */
+.approval-stage {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 132px minmax(300px, 350px);
+  gap: 24px;
+  align-items: center;
+  margin-top: 16px;
+  padding: 28px;
+  border: 1px solid var(--void-rule);
+  border-radius: 4px;
+  background: rgb(255 255 255 / 0.015);
+  box-shadow: 0 40px 100px rgb(0 0 0 / 0.4);
+}
+
+/* LEFT — the paused action in the governed workspace. */
+.ap-request {
+  min-width: 0;
+  padding: 26px;
+  border: 1px solid var(--void-rule);
+  border-radius: 3px;
+  background:
+    radial-gradient(circle at 96% 0, rgb(184 134 43 / 0.06), transparent 34%),
+    rgb(0 0 0 / 0.22);
+}
+.ap-request-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--void-rule);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9.5px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #9aa3a1;
+}
+.ap-request-top > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.ap-request-top i {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--amber);
+  box-shadow: 0 0 10px rgb(184 134 43 / 0.7);
+  transition: background 0.3s, box-shadow 0.3s;
+}
+.is-approved .ap-request-top i {
+  background: var(--v-bright);
+  box-shadow: 0 0 10px rgb(61 165 136 / 0.7);
+}
+.is-denied .ap-request-top i {
+  background: var(--oxide);
+  box-shadow: 0 0 10px rgb(196 88 74 / 0.7);
+}
+.ap-request-top small {
+  color: var(--void-2);
+}
+.ap-request-body {
+  padding-top: 24px;
+}
+.ap-request-icon {
+  display: grid;
+  width: 44px;
+  height: 44px;
+  margin-bottom: 20px;
+  place-items: center;
+  color: var(--amber);
+  border: 1px solid rgb(184 134 43 / 0.32);
+  border-radius: 3px;
+  background: rgb(184 134 43 / 0.08);
+}
+.ap-eyebrow {
+  margin-bottom: 12px;
+  color: var(--amber);
+}
+.ap-request-body h3 {
+  margin: 0 0 10px;
+  font-size: clamp(24px, 2.8vw, 34px);
+  font-weight: 300;
+  line-height: 1.02;
+  color: #f3f5f2;
+}
+.ap-request-desc {
+  max-width: 46ch;
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.6;
+  color: #9aa3a1;
+}
+.ap-facts {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-top: 20px;
+}
+.ap-facts span {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-height: 54px;
+  padding: 9px 11px;
+  border: 1px solid var(--void-rule);
+  border-radius: 3px;
+  background: rgb(0 0 0 / 0.2);
+}
+.ap-facts small {
+  margin-bottom: 4px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--void-2);
+}
+.ap-facts b,
+.ap-facts code {
+  overflow: hidden;
+  font-size: 12px;
+  font-weight: 500;
+  color: #cdd3d0;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.ap-policy {
+  display: grid;
+  grid-template-columns: 22px 1fr;
+  align-items: center;
+  gap: 11px;
+  margin-top: 8px;
+  padding: 12px;
+  color: var(--amber);
+  border: 1px solid rgb(184 134 43 / 0.24);
+  border-radius: 3px;
+  background: rgb(184 134 43 / 0.05);
+}
+.ap-policy > span {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+}
+.ap-policy small {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 0.12em;
+  color: #b89660;
+}
+.ap-policy b {
+  font-size: 12.5px;
+  font-weight: 400;
+  line-height: 1.4;
+  color: #d9d4cc;
+}
+
+/* Step tracker — advances as the decision travels + returns. */
+.ap-track {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 7px;
+  margin-top: 18px;
+}
+.ap-track > span {
+  display: grid;
+  grid-template-columns: 22px 1fr;
+  column-gap: 8px;
+  align-content: center;
+  min-height: 54px;
+  padding: 8px;
+  color: #5f6663;
+  border: 1px solid var(--void-rule);
+  border-radius: 3px;
+  background: rgb(0 0 0 / 0.16);
+  transition: color 0.3s, border-color 0.3s;
+}
+.ap-track i {
+  display: grid;
+  grid-row: span 2;
+  width: 20px;
+  height: 20px;
+  place-items: center;
+  border: 1px solid currentColor;
+  border-radius: 50%;
+}
+.ap-track i > span {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: currentColor;
+}
+.ap-track b {
+  overflow: hidden;
+  font-size: 11px;
+  font-weight: 500;
+  color: #777d7a;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.ap-track small {
+  font-size: 9px;
+  color: #5f6663;
+}
+.ap-track > span.is-complete {
+  color: var(--v-bright);
+  border-color: rgb(61 165 136 / 0.28);
+}
+.ap-track > span.is-complete b {
+  color: #bbc0bc;
+}
+
+.ap-outcome {
+  display: grid;
+  grid-template-columns: 34px 1fr;
+  align-items: center;
+  gap: 11px;
+  margin-top: 10px;
+  padding: 11px;
+  border: 1px solid rgb(184 134 43 / 0.26);
+  border-radius: 3px;
+  background: rgb(184 134 43 / 0.05);
+  transition: border-color 0.3s, background 0.3s;
+}
+.is-approved .ap-outcome {
+  border-color: rgb(61 165 136 / 0.3);
+  background: rgb(61 165 136 / 0.07);
+}
+.is-denied .ap-outcome {
+  border-color: rgb(196 88 74 / 0.3);
+  background: rgb(196 88 74 / 0.07);
+}
+.ap-outcome > span {
+  display: grid;
+  width: 34px;
+  height: 34px;
+  place-items: center;
+  color: var(--amber);
+  border-radius: 3px;
+  background: rgb(184 134 43 / 0.1);
+}
+.is-approved .ap-outcome > span {
+  color: var(--v-bright);
+  background: rgb(61 165 136 / 0.12);
+}
+.is-denied .ap-outcome > span {
+  color: var(--oxide);
+  background: rgb(196 88 74 / 0.12);
+}
+.ap-outcome > div {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+}
+.ap-outcome small {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  color: #777d7a;
+}
+.ap-outcome b {
+  font-size: 12.5px;
+  font-weight: 500;
+  line-height: 1.35;
+  color: #d5d1cb;
+}
+
+/* MIDDLE — the signed round-trip. A hairline with a travelling node. */
+.ap-link {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 420px;
+}
+.ap-link::before {
+  content: '';
+  position: absolute;
+  left: 4%;
+  right: 4%;
+  height: 1px;
+  background: linear-gradient(90deg, var(--amber), var(--v-bright));
+  opacity: 0.5;
+}
+.ap-link > span {
+  position: absolute;
+  z-index: 2;
+  left: 4%;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--v-bright);
+  box-shadow: 0 0 0 5px rgb(61 165 136 / 0.12), 0 0 22px rgb(61 165 136 / 0.8);
+}
+.ap-link > div {
+  position: relative;
+  z-index: 3;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  min-width: 118px;
+  padding: 14px 10px;
+  color: var(--v-bright);
+  border: 1px solid rgb(61 165 136 / 0.26);
+  border-radius: 3px;
+  background: #0b1210;
+  box-shadow: 0 14px 34px rgb(0 0 0 / 0.4);
+  text-align: center;
+}
+.ap-link b {
+  font-size: 11px;
+  font-weight: 600;
+  color: #e5e2dd;
+}
+.ap-link small {
+  max-width: 96px;
+  font-size: 9.5px;
+  line-height: 1.35;
+  color: #777d7a;
+}
+
+/* RIGHT — the approver's phone. */
+.ap-phone-wrap {
+  min-width: 0;
+}
+.ap-phone-label {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 10px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #9aa3a1;
+}
+.ap-phone-label span {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+.ap-phone-label i {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--v-bright);
+  box-shadow: 0 0 10px rgb(61 165 136 / 0.7);
+}
+.ap-phone-label small {
+  color: var(--void-2);
+}
+.ap-phone {
+  position: relative;
+  overflow: hidden;
+  width: min(100%, 336px);
+  min-height: 588px;
+  margin: 0 auto;
+  padding: 12px 14px 20px;
+  border: 7px solid #0b0d0c;
+  border-radius: 40px;
+  background:
+    radial-gradient(circle at 85% 4%, rgb(61 165 136 / 0.16), transparent 34%),
+    #0f1413;
+  box-shadow: 0 32px 74px rgb(0 0 0 / 0.5), inset 0 0 0 1px rgb(255 255 255 / 0.06);
+}
+.ap-phone::before {
+  content: '';
+  position: absolute;
+  top: 8px;
+  left: 50%;
+  width: 78px;
+  height: 20px;
+  border-radius: 16px;
+  background: #060807;
+  transform: translateX(-50%);
+}
+.ap-phone-status {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 2px 7px 16px;
+  font-size: 9.5px;
+  color: #aaa69f;
+}
+.ap-phone-header {
+  display: grid;
+  grid-template-columns: 34px 1fr auto;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 6px 16px;
+  border-bottom: 1px solid var(--void-rule);
+}
+.ap-phone-header > span {
+  display: grid;
+  width: 34px;
+  height: 34px;
+  place-items: center;
+  color: var(--v-bright);
+  border: 1px solid rgb(61 165 136 / 0.3);
+  border-radius: 3px;
+  background: rgb(61 165 136 / 0.1);
+}
+.ap-phone-header > div {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+}
+.ap-phone-header b {
+  font-size: 13px;
+  color: #f0efec;
+}
+.ap-phone-header small {
+  font-size: 9.5px;
+  color: #71736e;
+}
+
+.ap-phone-request,
+.ap-phone-result {
+  padding: 26px 6px 12px;
+}
+.ap-phone-req-icon {
+  display: grid;
+  width: 48px;
+  height: 48px;
+  margin-bottom: 22px;
+  place-items: center;
+  color: var(--amber);
+  border: 1px solid rgb(184 134 43 / 0.3);
+  border-radius: 4px;
+  background: rgb(184 134 43 / 0.09);
+}
+.ap-phone-request h3,
+.ap-phone-result h3 {
+  margin: 0 0 10px;
+  font-size: 27px;
+  font-weight: 300;
+  line-height: 1;
+  color: #f3f5f2;
+}
+.ap-phone-desc {
+  max-width: none;
+  margin: 0;
+  font-size: 12.5px;
+  line-height: 1.55;
+  color: #9f9b95;
+}
+.ap-phone-facts {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 7px;
+  margin: 20px 0;
+}
+.ap-phone-facts span {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-height: 54px;
+  padding: 8px 9px;
+  border: 1px solid var(--void-rule);
+  border-radius: 3px;
+  background: rgb(0 0 0 / 0.22);
+}
+.ap-phone-facts small {
+  margin-bottom: 3px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--void-2);
+}
+.ap-phone-facts b,
+.ap-phone-facts code {
+  font-size: 11.5px;
+  font-weight: 500;
+  color: #c7c3bd;
+}
+.ap-phone-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 9px;
+}
+.ap-phone-actions button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-height: 44px;
+  border-radius: 3px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.2s var(--e), filter 0.2s;
+}
+.ap-phone-actions button:hover {
+  transform: translateY(-1px);
+}
+.ap-deny {
+  color: #d8d4cf;
+  border: 1px solid var(--void-rule);
+  background: #1c211f;
+}
+.ap-approve {
+  color: #08090a;
+  border: 1px solid var(--v-bright);
+  background: var(--v-bright);
+}
+
+/* Signed-decision result. */
+.ap-phone-res-icon {
+  display: grid;
+  width: 48px;
+  height: 48px;
+  margin-bottom: 22px;
+  place-items: center;
+  color: var(--v-bright);
+  border: 1px solid rgb(61 165 136 / 0.3);
+  border-radius: 4px;
+  background: rgb(61 165 136 / 0.1);
+}
+.ap-phone-result.is-denied .ap-phone-res-icon {
+  color: var(--oxide);
+  border-color: rgb(196 88 74 / 0.3);
+  background: rgb(196 88 74 / 0.09);
+}
+.ap-phone-result.is-denied .ap-eyebrow {
+  color: var(--oxide);
+}
+.ap-phone-result .ap-eyebrow {
+  color: var(--v-bright);
+}
+.ap-signature {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 22px;
+  padding: 11px;
+  color: var(--v-bright);
+  border: 1px solid var(--void-rule);
+  border-radius: 3px;
+  background: rgb(0 0 0 / 0.24);
+}
+.ap-phone-result.is-denied .ap-signature {
+  color: var(--oxide);
+}
+.ap-signature code {
+  font-size: 10.5px;
+  color: #aaa69f;
+}
+.ap-reset {
+  margin-top: 16px;
+  padding: 4px 0;
+  color: var(--v-bright);
+  border: 0;
+  background: none;
+  font-size: 12px;
+  cursor: pointer;
+}
+.ap-reset:hover {
+  text-decoration: underline;
+}
+.ap-home {
+  position: absolute;
+  bottom: 8px;
+  left: 50%;
+  width: 90px;
+  height: 4px;
+  border-radius: 4px;
+  background: #4a4f4c;
+  transform: translateX(-50%);
+}
+
+/* Principles strip. */
+.ap-principles {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  margin-top: 16px;
+  border: 1px solid var(--void-rule);
+  border-radius: 4px;
+  background: rgb(255 255 255 / 0.015);
+}
+.ap-principles > span {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  min-height: 62px;
+  justify-content: center;
+  padding: 14px 18px;
+  border-right: 1px solid var(--void-rule);
+}
+.ap-principles > span:last-child {
+  border-right: 0;
+}
+.ap-principles b {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  color: var(--v-bright);
+}
+.ap-principles small {
+  font-size: 12px;
+  line-height: 1.4;
+  color: #9aa3a1;
+}
+
 /* ---- Responsive ---- */
 @media (max-width: 900px) {
   .wrap {
@@ -1635,6 +2307,37 @@ footer {
   .cta-row .btn {
     text-align: center;
   }
+  /* Approval demo: single column. The secure-link connector is desktop-only
+     scaffolding, so drop it; the phone stacks under the request panel and the
+     scenario chips + principles collapse to one column. */
+  .approval-stage {
+    grid-template-columns: 1fr;
+    gap: 20px;
+    padding: 18px;
+  }
+  .ap-link {
+    display: none;
+  }
+  .ap-phone {
+    min-height: auto;
+  }
+  #approval .approval-scenarios {
+    grid-template-columns: 1fr;
+  }
+  .ap-principles {
+    grid-template-columns: 1fr;
+  }
+  .ap-principles > span {
+    border-right: 0;
+    border-bottom: 1px solid var(--void-rule);
+  }
+  .ap-principles > span:last-child {
+    border-bottom: 0;
+  }
+  .ap-facts,
+  .ap-track {
+    grid-template-columns: 1fr 1fr;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -1656,6 +2359,16 @@ footer {
      reduced motion (no animation loop, no cursor parallax). Nothing to override
      here beyond killing any transform; the canvas holds a single static frame. */
   .hero-field {
+    transform: none !important;
+  }
+  /* Approval demo: initApprovalDemo early-returns under RM, so the section
+     stays in its authored resting state — request panel "paused", phone showing
+     the pending decision card. That already reads as a complete, honest scene
+     (the guarantee is stated in copy, not motion), so nothing to force here
+     beyond killing any stray transform on the interactive pieces. */
+  .approval-stage,
+  .ap-phone,
+  .ap-link > span {
     transform: none !important;
   }
   /* Shot deck: no pin, no pan. Stack the shots in flow (single column, rail
