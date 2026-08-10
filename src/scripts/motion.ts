@@ -644,6 +644,7 @@ float snoise(vec2 v){
     const FRAG = `#version 300 es
 precision highp float;
 uniform vec2 uResolution; uniform float uTime; uniform vec2 uMouse;
+uniform float uMouseGlow; // 0 when cursor is away, eases to 1 while hovering
 uniform vec3 uColorLo; uniform vec3 uColorHi;
 out vec4 fragColor;
 ${SNOISE}
@@ -656,7 +657,10 @@ float warp(vec2 p,float t,out vec2 r){
 }
 void main(){
   vec2 uv=(gl_FragCoord.xy-0.5*uResolution)/uResolution.y;
-  vec2 p=uv*${SCALE.toFixed(2)}*vec2(1.0,${ANISO.toFixed(2)}) + uMouse*0.10;
+  // Field sampling is now cursor-INDEPENDENT — the folds stay put (no more
+  // whole-field warp, which read as dizzying). The cursor only adds a local
+  // shimmer of light on top, below.
+  vec2 p=uv*${SCALE.toFixed(2)}*vec2(1.0,${ANISO.toFixed(2)});
   float t=uTime*${SPEED.toFixed(3)};
   vec2 r; float f=warp(p,t,r);
   vec2 L=normalize(vec2(${RAKE.toFixed(2)},${(1 - RAKE).toFixed(2)})+vec2(0.6,0.2));
@@ -667,6 +671,17 @@ void main(){
   shade=pow(shade,${CONTRAST.toFixed(2)});
   vec3 col=mix(uColorLo,uColorHi,shade); col=pow(col,vec3(1.1));
   col*=1.0-0.30*dot(uv,uv);
+
+  // Cursor shimmer — a soft radial pool of light around the pointer that
+  // catches the fold structure and adds a gentle animated sparkle, fading in
+  // while hovering (uMouseGlow) and out when the cursor leaves. uMouse is in
+  // the same y-normalized uv space as this fragment.
+  float d = distance(uv, uMouse);
+  float halo = smoothstep(0.42, 0.0, d);          // soft ~0.42-radius pool
+  float twinkle = 0.6 + 0.4*sin(uTime*2.3 + d*22.0); // slow shimmer within it
+  float lift = uMouseGlow * halo * (0.28 + 0.22*ridge) * twinkle;
+  col += uColorHi * lift;
+
   float gr=fract(sin(dot(gl_FragCoord.xy+t*57.0,vec2(12.9898,78.233)))*43758.5453);
   col+=(gr-0.5)*${GRAIN.toFixed(3)};
   fragColor=vec4(col,1.0);
@@ -695,6 +710,7 @@ void main(){
     const uRes = gl.getUniformLocation(prog, 'uResolution');
     const uTime = gl.getUniformLocation(prog, 'uTime');
     const uMouse = gl.getUniformLocation(prog, 'uMouse');
+    const uMouseGlow = gl.getUniformLocation(prog, 'uMouseGlow');
     gl.uniform3fv(gl.getUniformLocation(prog, 'uColorLo'), LO);
     gl.uniform3fv(gl.getUniformLocation(prog, 'uColorHi'), HI);
 
@@ -712,11 +728,18 @@ void main(){
     };
     resize();
 
+    // Cursor shimmer state. mx/my are in the shader's y-normalized uv space.
+    // glowT is the target (1 while the cursor is active over the hero, 0 when
+    // it's away/idle); glow eases toward it so the pool of light fades in/out.
     let mx = 0,
-      my = 0;
+      my = 0,
+      glow = 0,
+      glowT = 0;
     const draw = (tSec: number) => {
+      glow += (glowT - glow) * 0.08; // smooth ease-in/out per frame
       gl.uniform1f(uTime, tSec);
       gl.uniform2f(uMouse, mx, my);
+      gl.uniform1f(uMouseGlow, glow);
       gl.drawArrays(gl.TRIANGLES, 0, 3);
     };
 
@@ -771,18 +794,37 @@ void main(){
     addEventListener('resize', resize, { passive: true });
     play();
 
-    // Cursor warp — fine pointer + desktop only. Feeds uMouse; the shader adds
-    // it into the sample position so the folds flow toward the cursor.
+    // Cursor shimmer — fine pointer + desktop only. Feeds uMouse (position, in
+    // the shader's y-normalized uv space) + uMouseGlow (intensity). The shader
+    // paints a soft local pool of light there; the field itself does NOT move.
+    // A short idle timeout fades the shimmer if the cursor stops, and it fades
+    // out entirely once the pointer leaves the window or the hero scrolls away.
     if (FINE) {
+      let idle: number | undefined;
+      const toUv = (e: PointerEvent | MouseEvent) => {
+        const r = cv.getBoundingClientRect();
+        mx = (e.clientX - r.left - r.width / 2) / r.height;
+        my = -(e.clientY - r.top - r.height / 2) / r.height;
+      };
       addEventListener(
         'pointermove',
         (e) => {
-          if (cv.getBoundingClientRect().bottom <= 0) return; // hero gone
-          mx = e.clientX / innerWidth - 0.5;
-          my = -(e.clientY / innerHeight - 0.5);
+          if (cv.getBoundingClientRect().bottom <= 0) {
+            glowT = 0; // hero gone → let the shimmer fade out
+            return;
+          }
+          toUv(e);
+          glowT = 1;
+          if (idle) clearTimeout(idle);
+          idle = window.setTimeout(() => {
+            glowT = 0;
+          }, 1600); // fade out if the cursor rests
         },
         { passive: true }
       );
+      document.addEventListener('pointerleave', () => {
+        glowT = 0;
+      });
     }
   }
 
