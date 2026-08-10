@@ -243,6 +243,61 @@ p {
   white-space: nowrap;
 }
 
+/* ---- Villain: agent sprawl (copper beat) ----
+   Tall #sprawl section; a sticky stage holds the copy centered while a
+   .sprawl-wash layer cross-fades green→copper→green as you scroll (initSprawl
+   scrubs its opacity 0→1→0). Copper stays inside the mineral family (warm, low
+   chroma) — never a neon token, so the QA palette guard stays green. The wash
+   starts at opacity:0, so before scroll / with JS off the section reads as its
+   own .void green-black. Mobile + reduced motion collapse it to one static
+   copper-tinted screen (see the 900px and RM blocks below). */
+.sprawl-stage {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+}
+.sprawl-wash {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  opacity: 0; /* initSprawl scrubs this 0 → 1 → 0 across the beat */
+  background:
+    radial-gradient(120% 90% at 50% 42%, #6b4327 0%, #3c2a1b 46%, transparent 78%),
+    linear-gradient(180deg, transparent 0%, #241a12 55%, transparent 100%);
+}
+.sprawl-inner {
+  position: relative;
+  z-index: 2;
+  text-align: center;
+  max-width: 60ch;
+  margin-inline: auto;
+}
+.sprawl-kicker {
+  color: #c98a4e;
+}
+.sprawl-h {
+  margin: 16px auto 0;
+  color: #f2e6da;
+}
+.sprawl-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: center;
+  margin-top: 30px;
+}
+/* Warm the chip hairline against copper so they don't read cold-mineral here. */
+#sprawl .arch-chip {
+  border-color: #4a3a2a;
+}
+.sprawl-sub {
+  margin: 30px auto 0;
+  color: color-mix(in srgb, #f2e6da 66%, transparent);
+}
+
 /* ---- Nav ---- */
 .nav {
   position: fixed;
@@ -2298,6 +2353,27 @@ footer {
     opacity: 1 !important;
     transform: none !important;
   }
+  /* Villain: one calm copper-tinted screen on phones — no 220vh sticky scroll.
+     Same class of collapse as #wall above: drop the tall height, un-stick the
+     stage, and show the copper wash statically. initSprawl skips its scrub at
+     this width (RM || MOB) so ScrollTrigger has no dead pin over height:auto. */
+  #sprawl {
+    height: auto !important;
+  }
+  .sprawl-stage {
+    position: static;
+    height: auto;
+    min-height: 0;
+    flex-direction: column;
+    padding: 84px 0;
+  }
+  .sprawl-wash {
+    opacity: 0.9 !important;
+  }
+  .sprawl-inner {
+    opacity: 1 !important;
+    transform: none !important;
+  }
 }
 @media (max-width: 380px) {
   .wrap {
@@ -2466,6 +2542,25 @@ footer {
   }
   .q-answer {
     position: static;
+    opacity: 1 !important;
+    transform: none !important;
+  }
+  /* Villain: static copper screen; initSprawl early-returns under RM, so the
+     wash never scrubs — hold it visible here so the copper beat still reads. */
+  #sprawl {
+    height: auto !important;
+  }
+  .sprawl-stage {
+    position: static;
+    height: auto;
+    min-height: 60vh;
+    flex-direction: column;
+    padding: 96px 0;
+  }
+  .sprawl-wash {
+    opacity: 0.9 !important;
+  }
+  .sprawl-inner {
     opacity: 1 !important;
     transform: none !important;
   }

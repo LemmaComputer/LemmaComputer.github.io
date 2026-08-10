@@ -200,6 +200,34 @@ const deckShots: {
       </div>
     </section>
 
+    <!-- 1.25 · THE VILLAIN — agent sprawl (green → copper → green) --------- -->
+    <!-- Names the problem upfront (adapted from the LemmaComputer social card).
+         A tall scroll beat: a copper wash rises out of the green hero, holds
+         behind the headline + agent chips, then fades back to green-black before
+         #wall. Driven by initSprawl() (motion.ts) via a CSS-sticky stage + a
+         scrubbed background layer — NO GSAP pin, so it can't overlap the
+         neighbouring pins. Reduced motion / ≤900px collapse to one calm
+         copper-tinted screen (CSS), and initSprawl early-returns there. The chips
+         are decorative; the full problem statement lives in the aria-label + the
+         visible <h2>, so nothing is lost to assistive tech. -->
+    <section id="sprawl" class="void" style="height:220vh"
+             aria-label="The agent era is already here: each team is bringing its own ungoverned agent. Unmanaged agents are multiplying faster than enterprises can govern them.">
+      <div class="sprawl-wash" data-sprawl-wash aria-hidden="true"></div>
+      <div class="sprawl-stage">
+        <div class="wrap sprawl-inner" data-sprawl>
+          <p class="label sprawl-kicker">THE AGENT ERA IS ALREADY HERE</p>
+          <h2 class="serif t-xl sprawl-h">Each team is bringing its own ungoverned agent.</h2>
+          <div class="sprawl-chips" aria-hidden="true">
+            <span class="arch-chip" data-agent="claude">Claude</span>
+            <span class="arch-chip" data-agent="codex">Codex</span>
+            <span class="arch-chip" data-agent="hermes">Hermes</span>
+            <span class="arch-chip arch-chip-ghost" data-agent="own">…+ yours</span>
+          </div>
+          <p class="lede sprawl-sub">Unmanaged agents are multiplying faster than enterprises can govern them.</p>
+        </div>
+      </div>
+    </section>
+
     <!-- 1.5 · THE OBJECTION WALL — the emotional turn ---------------------- -->
     <!-- A pinned screen: the questions every CISO/CIO asks about agents scatter
          across the field, resolve into the one that matters, then answer to the

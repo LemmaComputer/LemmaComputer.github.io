@@ -910,6 +910,31 @@ void main(){
   }
 
   /* ------------------------------------------------------------------ *
+   * #sprawl — the villain beat.
+   * A tall section whose background transits green → copper → green-black as you
+   * scroll. Modeled on initWall: a CSS-sticky stage does the "pin" (no GSAP
+   * pin:true, so it can't overlap the neighbouring sequential pins), and a scrub
+   * timeline just rides the copper .sprawl-wash opacity 0→1→0 while the copy
+   * settles up. Early-returns under reduced motion AND mobile: at ≤900px the
+   * section collapses to height:auto (see the 900px block in global.css) so a
+   * scrubbed pin would have no travel and could freeze the wash mid-fade; CSS
+   * holds the wash statically there instead.
+   * ------------------------------------------------------------------ */
+  function initSprawl() {
+    const wash = document.querySelector('[data-sprawl-wash]') as HTMLElement | null;
+    const inner = document.querySelector('[data-sprawl]') as HTMLElement | null;
+    if (!wash || !inner) return;
+    const MOB = !DESKTOP;
+    if (RM || MOB) return;
+
+    g.timeline({ scrollTrigger: { trigger: '#sprawl', start: 'top top', end: 'bottom bottom', scrub: 0.6 } })
+      .fromTo(wash, { opacity: 0 }, { opacity: 1, duration: 0.35, ease: 'none' })
+      .to(wash, { opacity: 1, duration: 0.3 }) // hold copper through the peak
+      .to(wash, { opacity: 0, duration: 0.35, ease: 'none' }) // fade back to green-black before #wall
+      .from(inner, { y: 26, opacity: 0.55, duration: 0.35 }, 0); // copy settles as copper rises
+  }
+
+  /* ------------------------------------------------------------------ *
    * #approval — separation-of-duties demo.
    * The agent's request is paused in the governed workspace and pushed to a
    * separate approver's phone. Tapping Deny/Approve signs the exact request
@@ -1067,6 +1092,7 @@ void main(){
   initArtifacts();
   initHeroField();
   initApprovalDemo();
+  initSprawl();
   initWall();
   initProofRail();
   initDeckScroll();
