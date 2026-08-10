@@ -202,17 +202,20 @@ const deckShots: {
 
     <!-- 1.25 · THE VILLAIN — agent sprawl (green → copper → green) --------- -->
     <!-- Names the problem upfront (adapted from the LemmaComputer social card).
-         A tall scroll beat: a copper wash rises out of the green hero, holds
-         behind the headline + agent chips, then fades back to green-black before
-         #wall. Driven by initSprawl() (motion.ts) via a CSS-sticky stage + a
-         scrubbed background layer — NO GSAP pin, so it can't overlap the
-         neighbouring pins. Reduced motion / ≤900px collapse to one calm
-         copper-tinted screen (CSS), and initSprawl early-returns there. The chips
-         are decorative; the full problem statement lives in the aria-label + the
-         visible <h2>, so nothing is lost to assistive tech. -->
+         A tall scroll beat: the hero's flowing WebGL wave CONTINUES on the
+         .sprawl-field canvas and its colour warms green → copper → green-black as
+         you scroll — the wave "turns orange" behind the headline + agent chips,
+         then cools back before #wall. Driven by initSprawl() (motion.ts): a
+         second makeFlowField instance (identical shader, cursor off) whose colour
+         uniforms are scrubbed by a CSS-sticky stage — NO GSAP pin, so it can't
+         overlap the neighbouring pins. Reduced motion / ≤900px collapse to one
+         calm copper-tinted screen (the field paints one static warmed frame), and
+         initSprawl skips the scrub there. The chips are decorative; the full
+         problem statement lives in the aria-label + the visible <h2>, so nothing
+         is lost to assistive tech. -->
     <section id="sprawl" class="void" style="height:220vh"
              aria-label="The agent era is already here: each team is bringing its own ungoverned agent. Unmanaged agents are multiplying faster than enterprises can govern them.">
-      <div class="sprawl-wash" data-sprawl-wash aria-hidden="true"></div>
+      <canvas class="sprawl-field" data-sprawl-field aria-hidden="true"></canvas>
       <div class="sprawl-stage">
         <div class="wrap sprawl-inner" data-sprawl>
           <p class="label sprawl-kicker">THE AGENT ERA IS ALREADY HERE</p>

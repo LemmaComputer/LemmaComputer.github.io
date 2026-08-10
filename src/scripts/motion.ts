@@ -576,28 +576,45 @@ if (g && ST) {
   }
 
   /* ------------------------------------------------------------------ *
-   * HERO ENERGY FIELD — a self-built WebGL2 flowing-field backdrop.
+   * FLOWING ENERGY FIELD — a self-built WebGL2 flowing-field backdrop.
    *
    * A single full-screen-triangle fragment shader (no vertex buffer, drawn off
    * gl_VertexID) renders IQ-style domain-warped simplex fbm lit by a
-   * directional-derivative "raked" highlight, retinted to verdigris on
-   * green-black + a touch of film grain. This is our own open-source take on
-   * the Unicorn-Studio-class field on Trident's hero — no runtime, no CDN, ~a
-   * few KB of shader source, well under the JS budget (GSAP is CDN).
+   * directional-derivative "raked" highlight, retinted between two caller-
+   * supplied endpoints + a touch of film grain. This is our own open-source
+   * take on the Unicorn-Studio-class field on Trident's hero — no runtime, no
+   * CDN, ~a few KB of shader source, well under the JS budget (GSAP is CDN).
+   *
+   * Extracted from the hero into `makeFlowField` so #sprawl can run the SAME
+   * wave (identical shader + constants) and scrub only its colours green→copper
+   * on scroll — the wave "continues" and warms. uColorLo/uColorHi are mutable
+   * via the returned setColors(); the hero keeps them fixed at verdigris.
    *
    * Motion policy:
    *   • reduced-motion or non-desktop  → paint exactly ONE frozen frame, no loop
    *   • desktop + motion               → ~30fps drift loop, paused off-screen /
    *                                       when the tab is hidden
-   *   • fine pointer + desktop         → cursor warps the field (uMouse)
-   * Bails silently (leaving the green-black canvas) if WebGL2 is unavailable.
-   * Decorative + aria-hidden; the H1 above stays authoritative.
+   *   • fine pointer + desktop         → cursor warps the field (uMouse), gated
+   *                                       by opts.enableCursor (hero yes, sprawl no)
+   * Bails silently (returns null, leaving the canvas' CSS background) if WebGL2
+   * is unavailable. Decorative + aria-hidden; the headline stays authoritative.
    * ------------------------------------------------------------------ */
-  function initHeroField() {
-    const cv = document.querySelector('[data-hero-field]') as HTMLCanvasElement | null;
-    if (!cv || typeof cv.getContext !== 'function') return;
+  /**
+   * makeFlowField — build the flowing-field shader on a canvas and return a
+   * handle. Extracted from the hero so #sprawl can run the SAME wave with a
+   * different colour ramp (see initSprawl). `colorLo`/`colorHi` seed the two
+   * ramp uniforms; the returned `setColors` rewrites them live (the hero keeps
+   * them fixed at verdigris; #sprawl scrubs them green→copper→green on scroll).
+   * `enableCursor` gates the uMouse shimmer (hero: true; #sprawl backdrop: false).
+   * Returns null (caller keeps its CSS fallback) if WebGL2 is unavailable.
+   */
+  function makeFlowField(
+    cv: HTMLCanvasElement,
+    opts: { colorLo: number[]; colorHi: number[]; enableCursor: boolean }
+  ): { setColors(lo: number[], hi: number[]): void } | null {
+    if (!cv || typeof cv.getContext !== 'function') return null;
     const gl = cv.getContext('webgl2', { antialias: false, alpha: false }) as WebGL2RenderingContext | null;
-    if (!gl) return; // no WebGL2 → leave the CSS green-black canvas as-is
+    if (!gl) return null; // no WebGL2 → leave the caller's CSS canvas as-is
 
     // Variant E (locked): blend of "quiet deep" + "bolder ridges" — deep dark
     // valleys with enough flowing ridge density across the frame.
@@ -609,9 +626,10 @@ if (g && ST) {
       GRAIN = 0.019,
       ANISO = 0.48,
       CONTRAST = 2.15;
-    // Verdigris #3da588 on green-black #060a09 (matches tokens.css --v-bright/--void).
-    const HI = [0.239, 0.647, 0.533],
-      LO = [0.024, 0.039, 0.035];
+    // Initial ramp — caller supplies it. Hero = verdigris #3da588 on green-black
+    // #060a09 (tokens.css --v-bright/--void); #sprawl starts on the same green.
+    const LO = opts.colorLo,
+      HI = opts.colorHi;
 
     const VERT = `#version 300 es
 const vec2 P[3] = vec2[3](vec2(-1.,-1.), vec2(3.,-1.), vec2(-1.,3.));
@@ -703,20 +721,32 @@ void main(){
     };
     const vs = compile(gl.VERTEX_SHADER, VERT);
     const fs = compile(gl.FRAGMENT_SHADER, FRAG);
-    if (!vs || !fs) return;
+    if (!vs || !fs) return null;
     const prog = gl.createProgram()!;
     gl.attachShader(prog, vs);
     gl.attachShader(prog, fs);
     gl.linkProgram(prog);
-    if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) return;
+    if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) return null;
     gl.useProgram(prog);
 
     const uRes = gl.getUniformLocation(prog, 'uResolution');
     const uTime = gl.getUniformLocation(prog, 'uTime');
     const uMouse = gl.getUniformLocation(prog, 'uMouse');
     const uMouseGlow = gl.getUniformLocation(prog, 'uMouseGlow');
-    gl.uniform3fv(gl.getUniformLocation(prog, 'uColorLo'), LO);
-    gl.uniform3fv(gl.getUniformLocation(prog, 'uColorHi'), HI);
+    // Colour-ramp uniforms are re-writable at runtime (setColors, below) so the
+    // #sprawl instance can warm the same wave green→copper→green on scroll.
+    const uColorLo = gl.getUniformLocation(prog, 'uColorLo');
+    const uColorHi = gl.getUniformLocation(prog, 'uColorHi');
+    gl.uniform3fv(uColorLo, LO);
+    gl.uniform3fv(uColorHi, HI);
+    const setColors = (lo: number[], hi: number[]) => {
+      gl.useProgram(prog);
+      gl.uniform3fv(uColorLo, lo);
+      gl.uniform3fv(uColorHi, hi);
+      // A static (RM / non-desktop) field has no rAF loop, so repaint on demand
+      // to reflect the new ramp; the live loop already redraws every frame.
+      if (RM || !DESKTOP) draw(8.0);
+    };
 
     const dpr = Math.min(window.devicePixelRatio || 1, 1.5);
     const resize = () => {
@@ -752,7 +782,7 @@ void main(){
     // fights touch-scroll compositing on phones and violates the RM contract.
     if (RM || !DESKTOP) {
       draw(8.0); // a settled, non-origin frame with pleasant fold structure
-      return;
+      return { setColors }; // caller may still recolour the static frame
     }
 
     // Desktop + motion: ~30fps drift loop, paused off-screen and when hidden.
@@ -803,7 +833,7 @@ void main(){
     // paints a soft local pool of light there; the field itself does NOT move.
     // A short idle timeout fades the shimmer if the cursor stops, and it fades
     // out entirely once the pointer leaves the window or the hero scrolls away.
-    if (FINE) {
+    if (opts.enableCursor && FINE) {
       let idle: number | undefined;
       const toUv = (e: PointerEvent | MouseEvent) => {
         const r = cv.getBoundingClientRect();
@@ -814,7 +844,7 @@ void main(){
         'pointermove',
         (e) => {
           if (cv.getBoundingClientRect().bottom <= 0) {
-            glowT = 0; // hero gone → let the shimmer fade out
+            glowT = 0; // field gone → let the shimmer fade out
             return;
           }
           toUv(e);
@@ -830,6 +860,23 @@ void main(){
         glowT = 0;
       });
     }
+
+    return { setColors };
+  }
+
+  /* ------------------------------------------------------------------ *
+   * HERO ENERGY FIELD — the verdigris flowing wave behind the H1. A thin
+   * caller over makeFlowField with the hero's fixed ramp + cursor shimmer.
+   * ------------------------------------------------------------------ */
+  function initHeroField() {
+    const cv = document.querySelector('[data-hero-field]') as HTMLCanvasElement | null;
+    if (!cv) return;
+    // Verdigris #3da588 on green-black #060a09 (tokens.css --v-bright / --void).
+    makeFlowField(cv, {
+      colorLo: [0.024, 0.039, 0.035],
+      colorHi: [0.239, 0.647, 0.533],
+      enableCursor: true,
+    });
   }
 
   /* ------------------------------------------------------------------ *
@@ -911,27 +958,50 @@ void main(){
 
   /* ------------------------------------------------------------------ *
    * #sprawl — the villain beat.
-   * A tall section whose background transits green → copper → green-black as you
-   * scroll. Modeled on initWall: a CSS-sticky stage does the "pin" (no GSAP
-   * pin:true, so it can't overlap the neighbouring sequential pins), and a scrub
-   * timeline just rides the copper .sprawl-wash opacity 0→1→0 while the copy
-   * settles up. Early-returns under reduced motion AND mobile: at ≤900px the
-   * section collapses to height:auto (see the 900px block in global.css) so a
-   * scrubbed pin would have no travel and could freeze the wash mid-fade; CSS
-   * holds the wash statically there instead.
+   * The hero's flowing wave CONTINUES here (a second makeFlowField on
+   * [data-sprawl-field], identical shader + constants) and warms green → copper
+   * → green-black as you scroll — "extend the wave; the wave turns orange."
+   * Modeled on initWall: a CSS-sticky stage does the "pin" (no GSAP pin:true, so
+   * it can't overlap the neighbouring sequential pins). The scrub timeline rides
+   * a plain {v} 0→1→0 and pushes mixed colour endpoints into the field's
+   * uColorLo/uColorHi each tick (the wave keeps drifting on its own rAF loop;
+   * scroll only changes its colour). Cursor is disabled — it's a backdrop.
+   * Under reduced motion AND mobile the section collapses to height:auto (see
+   * the 900px block in global.css), so there's no scroll travel: makeFlowField
+   * paints one frozen frame and we warm it once to a mid-copper, then stop.
    * ------------------------------------------------------------------ */
   function initSprawl() {
-    const wash = document.querySelector('[data-sprawl-wash]') as HTMLElement | null;
+    const cv = document.querySelector('[data-sprawl-field]') as HTMLCanvasElement | null;
     const inner = document.querySelector('[data-sprawl]') as HTMLElement | null;
-    if (!wash || !inner) return;
+    if (!cv || !inner) return;
     const MOB = !DESKTOP;
-    if (RM || MOB) return;
 
+    // Green endpoint = the hero's verdigris-on-green-black (the field it continues).
+    const G_LO = [0.024, 0.039, 0.035]; // #060a09
+    const G_HI = [0.239, 0.647, 0.533]; // #3da588 verdigris
+    // Copper endpoint (warm, mineral): dark copper valleys → copper/amber crests.
+    const C_LO = [0.106, 0.063, 0.039]; // ~#2a1a10
+    const C_HI = [0.788, 0.541, 0.306]; // ~#c98a4e
+    const mix = (a: number[], b: number[], t: number) => a.map((x, i) => x + (b[i]! - x) * t);
+
+    const field = makeFlowField(cv, { colorLo: G_LO, colorHi: G_HI, enableCursor: false });
+
+    // RM / ≤900px: makeFlowField already painted ONE frozen frame. Warm it once to
+    // a mid-copper (so the collapsed phone/RM screen still reads copper), then stop
+    // — no scroll scrub over a height:auto section (collapse-breakpoint rule).
+    if (RM || MOB) {
+      field?.setColors(mix(G_LO, C_LO, 0.85), mix(G_HI, C_HI, 0.85));
+      return;
+    }
+
+    // Desktop: scrub the wave's COLOUR green → copper → green across the 220vh beat.
+    const s = { v: 0 };
+    const apply = () => field?.setColors(mix(G_LO, C_LO, s.v), mix(G_HI, C_HI, s.v));
     g.timeline({ scrollTrigger: { trigger: '#sprawl', start: 'top top', end: 'bottom bottom', scrub: 0.6 } })
-      .fromTo(wash, { opacity: 0 }, { opacity: 1, duration: 0.35, ease: 'none' })
-      .to(wash, { opacity: 1, duration: 0.3 }) // hold copper through the peak
-      .to(wash, { opacity: 0, duration: 0.35, ease: 'none' }) // fade back to green-black before #wall
-      .from(inner, { y: 26, opacity: 0.55, duration: 0.35 }, 0); // copy settles as copper rises
+      .to(s, { v: 1, duration: 0.35, ease: 'none', onUpdate: apply }) // warm to copper as you enter
+      .to(s, { v: 1, duration: 0.3, onUpdate: apply }) // hold copper through the peak
+      .to(s, { v: 0, duration: 0.35, ease: 'none', onUpdate: apply }) // cool back to green before #wall
+      .from(inner, { y: 26, opacity: 0.55, duration: 0.35 }, 0); // copy settles as it warms
   }
 
   /* ------------------------------------------------------------------ *

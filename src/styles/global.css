@@ -244,13 +244,13 @@ p {
 }
 
 /* ---- Villain: agent sprawl (copper beat) ----
-   Tall #sprawl section; a sticky stage holds the copy centered while a
-   .sprawl-wash layer cross-fades green→copper→green as you scroll (initSprawl
-   scrubs its opacity 0→1→0). Copper stays inside the mineral family (warm, low
-   chroma) — never a neon token, so the QA palette guard stays green. The wash
-   starts at opacity:0, so before scroll / with JS off the section reads as its
-   own .void green-black. Mobile + reduced motion collapse it to one static
-   copper-tinted screen (see the 900px and RM blocks below). */
+   Tall #sprawl section; a sticky stage holds the copy centered while the hero's
+   flowing wave CONTINUES on the .sprawl-field canvas, its colour scrubbed
+   green→copper→green as you scroll (initSprawl). Copper stays inside the mineral
+   family (warm, low chroma) — never a neon token, so the QA palette guard stays
+   green. With JS off / WebGL2 unavailable the canvas' static copper gradient
+   fallback shows. Mobile + reduced motion collapse it to one static copper-tinted
+   screen (see the 900px and RM blocks below). */
 .sprawl-stage {
   position: sticky;
   top: 0;
@@ -259,14 +259,24 @@ p {
   align-items: center;
   overflow: hidden;
 }
-.sprawl-wash {
+/* The hero's flowing wave CONTINUES here: a second WebGL2 field (initSprawl in
+   motion.ts) paints the same domain-warped field and scrubs its colour green →
+   copper → green as you scroll. Masked top/bottom like .hero-field so it melts
+   into the green-black at the section seams (reads as one continuous wave). The
+   static copper gradient is a belt-and-braces fallback if WebGL2 is unavailable. */
+.sprawl-field {
   position: absolute;
   inset: 0;
   z-index: 0;
-  opacity: 0; /* initSprawl scrubs this 0 → 1 → 0 across the beat */
+  display: block;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
   background:
     radial-gradient(120% 90% at 50% 42%, #6b4327 0%, #3c2a1b 46%, transparent 78%),
     linear-gradient(180deg, transparent 0%, #241a12 55%, transparent 100%);
+  -webkit-mask-image: linear-gradient(180deg, transparent 0%, #000 14%, #000 88%, transparent 100%);
+  mask-image: linear-gradient(180deg, transparent 0%, #000 14%, #000 88%, transparent 100%);
 }
 .sprawl-inner {
   position: relative;
@@ -2367,8 +2377,8 @@ footer {
     flex-direction: column;
     padding: 84px 0;
   }
-  .sprawl-wash {
-    opacity: 0.9 !important;
+  .sprawl-field {
+    opacity: 1 !important; /* canvas paints one static warmed-copper frame here */
   }
   .sprawl-inner {
     opacity: 1 !important;
@@ -2557,8 +2567,8 @@ footer {
     flex-direction: column;
     padding: 96px 0;
   }
-  .sprawl-wash {
-    opacity: 0.9 !important;
+  .sprawl-field {
+    opacity: 1 !important; /* canvas paints one static warmed-copper frame here */
   }
   .sprawl-inner {
     opacity: 1 !important;
