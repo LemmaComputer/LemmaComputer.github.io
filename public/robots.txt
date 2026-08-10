@@ -1,0 +1,9 @@
+# LemmaComputer — https://lemmacomputer.github.io
+# Crawlers welcome. The homepage is the one indexable page; /social/ is a
+# utility export sheet and is kept out of the index (also noindex in its head).
+
+User-agent: *
+Allow: /
+Disallow: /social/
+
+Sitemap: https://lemmacomputer.github.io/sitemap.xml

@@ -103,6 +103,67 @@ for (const shot of [...new Set(referencedShots)]) {
   assert(built, `Referenced shot was not emitted to dist: shots/${shot}`);
 }
 
+// SEO contract — the discoverability surface must survive every rebuild. These
+// assert the head metadata (canonical, Open Graph, Twitter, JSON-LD, robots)
+// and that the crawler files + share image actually shipped to dist/.
+const seoOrigin = 'https://lemmacomputer.github.io';
+assert(
+  html.includes(`<link rel="canonical" href="${seoOrigin}/"`),
+  'Homepage is missing a canonical link to the site root.',
+);
+assert(/<meta name="description" content="[^"]{80,}"/.test(html), 'Meta description is missing or too short.');
+assert(/<meta name="keywords" content="[^"]+"/.test(html), 'Meta keywords are missing.');
+assert(/<meta name="robots" content="index, follow/.test(html), 'Homepage must be indexable (robots index, follow).');
+assert(/<meta name="theme-color"/.test(html), 'theme-color meta is missing.');
+
+// Open Graph + Twitter — the link-unfurl card.
+for (const prop of ['og:title', 'og:description', 'og:image', 'og:url', 'og:type']) {
+  assert(html.includes(`property="${prop}"`), `Open Graph tag missing: ${prop}`);
+}
+assert(
+  html.includes(`content="${seoOrigin}/og.jpg"`),
+  'og:image must resolve to the absolute /og.jpg URL.',
+);
+assert(html.includes('<meta property="og:image:width" content="1200"'), 'og:image:width must be 1200.');
+assert(html.includes('<meta property="og:image:height" content="630"'), 'og:image:height must be 630.');
+assert(
+  html.includes('name="twitter:card" content="summary_large_image"'),
+  'Twitter summary_large_image card is missing.',
+);
+
+// JSON-LD structured data — must be present and parse, and name the product.
+const ldMatch = html.match(/<script type="application\/ld\+json"[^>]*>([\s\S]*?)<\/script>/);
+assert(ldMatch, 'JSON-LD structured-data block is missing.');
+if (ldMatch) {
+  let ld;
+  try {
+    ld = JSON.parse(ldMatch[1]);
+  } catch {
+    assert(false, 'JSON-LD block is present but does not parse as JSON.');
+  }
+  if (ld) {
+    const graph = Array.isArray(ld['@graph']) ? ld['@graph'] : [ld];
+    const types = graph.map((node) => node['@type']);
+    assert(types.includes('SoftwareApplication'), 'JSON-LD must include a SoftwareApplication node.');
+    assert(types.includes('Organization'), 'JSON-LD must include an Organization node.');
+  }
+}
+
+// Crawler files + share image emitted to dist/.
+const emitted = (rel) => distFiles.some((f) => f.replace(/\\/g, '/').endsWith(`/${rel}`));
+assert(emitted('robots.txt'), 'robots.txt was not emitted to dist/.');
+assert(emitted('sitemap.xml'), 'sitemap.xml was not emitted to dist/.');
+assert(emitted('og.jpg'), 'og.jpg (1200×630 share image) was not emitted to dist/.');
+
+// robots.txt must point at the sitemap and keep /social/ out of the index.
+const robotsTxt = await readFile(path.join(distRoot, 'robots.txt'), 'utf8').catch(() => '');
+assert(robotsTxt.includes(`Sitemap: ${seoOrigin}/sitemap.xml`), 'robots.txt must reference the sitemap.');
+assert(/Disallow:\s*\/social\//.test(robotsTxt), 'robots.txt must disallow /social/.');
+
+// The utility export sheet must never be indexable.
+const socialHtml = await readFile(path.join(distRoot, 'social', 'index.html'), 'utf8').catch(() => '');
+assert(/<meta name="robots" content="noindex/.test(socialHtml), '/social/ must be noindex.');
+
 const clientScripts = distFiles.filter((file) => file.endsWith('.js'));
 let gzipBytes = 0;
 for (const script of clientScripts) gzipBytes += gzipSync(await readFile(script)).byteLength;

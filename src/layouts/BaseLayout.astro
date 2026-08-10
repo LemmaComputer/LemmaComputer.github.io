@@ -5,15 +5,75 @@ import { site } from '../config/site';
 interface Props {
   title?: string;
   description?: string;
+  /** Overrides the canonical/OG URL. Defaults to the current page's absolute URL. */
+  path?: string;
+  /** Set true on utility pages (e.g. /social/) to keep them out of the index. */
+  noindex?: boolean;
+  /** Structured-data type for the page node. Home is a SoftwareApplication. */
+  ogType?: 'website' | 'article';
 }
 
 const {
-  title = 'LemmaComputer — Any agent. One governed computer.',
+  title = `${site.name} — ${site.tagline}`,
   description = site.description,
+  path,
+  noindex = false,
+  ogType = 'website',
 } = Astro.props;
 
 const base = import.meta.env.BASE_URL;
 const favicon = `${base}favicon.svg`.replace(/\/{2,}/g, '/');
+
+// Absolute URLs for canonical + social tags. Astro.site is set in
+// astro.config.mjs, so these resolve correctly on the current host and would
+// track a future custom domain with no code change.
+const siteOrigin = Astro.site ?? new URL('https://lemmacomputer.github.io');
+const canonical = new URL(path ?? Astro.url.pathname, siteOrigin).href;
+const ogImageUrl = new URL(site.ogImage, siteOrigin).href;
+const keywords = site.keywords.join(', ');
+
+// JSON-LD: a SoftwareApplication published by an Organization. Both nodes share
+// one @graph so crawlers link the product to its publisher. Mirrors on-page
+// facts only — no invented ratings or prices.
+const jsonLd = {
+  '@context': 'https://schema.org',
+  '@graph': [
+    {
+      '@type': 'SoftwareApplication',
+      '@id': `${siteOrigin.origin}/#software`,
+      name: site.name,
+      alternateName: `${site.name} — ${site.tagline}`,
+      applicationCategory: 'DeveloperApplication',
+      operatingSystem: 'Linux (Ubuntu)',
+      description: site.description,
+      url: canonical,
+      image: ogImageUrl,
+      keywords,
+      isAccessibleForFree: true,
+      license: site.githubHref,
+      offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' },
+      publisher: { '@id': `${siteOrigin.origin}/#org` },
+      sameAs: site.sameAs,
+    },
+    {
+      '@type': 'Organization',
+      '@id': `${siteOrigin.origin}/#org`,
+      name: site.publisher,
+      url: siteOrigin.origin,
+      logo: ogImageUrl,
+      sameAs: site.sameAs,
+    },
+    {
+      '@type': 'WebSite',
+      '@id': `${siteOrigin.origin}/#website`,
+      url: siteOrigin.origin,
+      name: site.name,
+      description: site.description,
+      publisher: { '@id': `${siteOrigin.origin}/#org` },
+      inLanguage: 'en',
+    },
+  ],
+};
 ---
 
 <!doctype html>
@@ -21,15 +81,53 @@ const favicon = `${base}favicon.svg`.replace(/\/{2,}/g, '/');
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title}</title>
     <meta name="description" content={description} />
+    <meta name="keywords" content={keywords} />
+    <meta name="author" content={site.publisher} />
+    <meta name="generator" content={Astro.generator} />
+    <link rel="canonical" href={canonical} />
+    {
+      noindex ? (
+        <meta name="robots" content="noindex, nofollow" />
+      ) : (
+        <meta name="robots" content="index, follow, max-image-preview:large" />
+      )
+    }
+    <meta name="theme-color" content="#0d0f10" media="(prefers-color-scheme: dark)" />
+    <meta name="theme-color" content="#f3f5f2" media="(prefers-color-scheme: light)" />
+    <meta name="color-scheme" content="light dark" />
+
+    {/* Open Graph — LinkedIn, Slack, iMessage, Facebook link unfurls. */}
+    <meta property="og:type" content={ogType} />
+    <meta property="og:site_name" content={site.name} />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:image" content={ogImageUrl} />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content={`${site.name} — ${site.tagline}`} />
+    <meta property="og:locale" content="en_US" />
+
+    {/* Twitter/X card. */}
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={title} />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={ogImageUrl} />
+    <meta name="twitter:image:alt" content={`${site.name} — ${site.tagline}`} />
+    {site.twitterHandle && <meta name="twitter:site" content={site.twitterHandle} />}
+
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin />
     <link
       href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,200;0,6..72,300;0,6..72,400;1,6..72,200;1,6..72,300&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap"
       rel="stylesheet"
     />
     <link rel="icon" href={favicon} type="image/svg+xml" />
-    <title>{title}</title>
+    <link rel="sitemap" href="/sitemap.xml" />
+    <script type="application/ld+json" is:inline set:html={JSON.stringify(jsonLd)} />
   </head>
   <body>
     <a class="skip-link" href="#top">Skip to content</a>
