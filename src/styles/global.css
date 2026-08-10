@@ -406,8 +406,8 @@ section {
   text-decoration: none;
   border: 1px solid;
   position: relative;
-  overflow: hidden;
-  transition: transform 0.35s var(--e), background 0.35s, color 0.35s;
+  transition: transform 0.2s var(--e), background 0.2s var(--e),
+    border-color 0.2s var(--e), color 0.2s var(--e), box-shadow 0.2s var(--e);
   display: inline-block;
 }
 .btn-p {
@@ -431,23 +431,22 @@ section {
 .btn-g:hover {
   border-color: var(--text);
 }
+/* Hover: a clean, deliberate lift. The button rises, the ghost/secondary
+   button gets a firmer edge. (A prior magnetic-drift JS + one-shot shimmer
+   made this feel unstable; both are gone.) */
 .btn:hover {
   transform: translateY(-2px);
 }
-.btn-p::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(90deg, transparent, rgb(255 255 255 / 0.4), transparent);
-  transform: translateX(-100%);
+/* Primary: lift + slightly brighter fill + a soft verdigris glow that reads
+   as the button coming forward. --glow re-tints per theme. */
+.btn-p:hover {
+  background: color-mix(in srgb, var(--v-bright) 88%, #fff);
+  border-color: color-mix(in srgb, var(--v-bright) 88%, #fff);
+  box-shadow: 0 10px 26px var(--glow), 0 2px 6px rgb(0 0 0 / 0.18);
 }
-.btn-p:hover::before {
-  animation: sweep 0.9s var(--e);
-}
-@keyframes sweep {
-  to {
-    transform: translateX(100%);
-  }
+.btn-p:active {
+  transform: translateY(0);
+  box-shadow: 0 4px 12px var(--glow);
 }
 
 /* ---- Hero ---- */

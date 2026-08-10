@@ -94,23 +94,9 @@ if (g && ST) {
     });
   }
 
-  /* MAGNETIC PRIMARY BUTTONS — pointer nudges the button toward the cursor.
-     Fine pointers only; transform-only; off under RM. */
-  if (FINE && !RM) {
-    qsa('.btn-p').forEach((btn) => {
-      const xTo = g.quickTo(btn, 'x', { duration: 0.4, ease: 'power3' });
-      const yTo = g.quickTo(btn, 'y', { duration: 0.4, ease: 'power3' });
-      btn.addEventListener('pointermove', (e) => {
-        const r = btn.getBoundingClientRect();
-        xTo((e.clientX - (r.left + r.width / 2)) * 0.4);
-        yTo((e.clientY - (r.top + r.height / 2)) * 0.5);
-      });
-      btn.addEventListener('pointerleave', () => {
-        xTo(0);
-        yTo(0);
-      });
-    });
-  }
+  /* Primary buttons hover entirely in CSS (lift + glow) — no JS transform.
+     A prior "magnetic" drift set an inline transform on .btn-p that overrode
+     the CSS :hover lift and made the button slide under the cursor; removed. */
 
   /* GENTLE PARALLAX — tiny transform-only drift on cards. */
   if (!RM)
