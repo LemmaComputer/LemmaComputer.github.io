@@ -657,30 +657,38 @@ float warp(vec2 p,float t,out vec2 r){
 }
 void main(){
   vec2 uv=(gl_FragCoord.xy-0.5*uResolution)/uResolution.y;
-  // Field sampling is now cursor-INDEPENDENT — the folds stay put (no more
-  // whole-field warp, which read as dizzying). The cursor only adds a local
-  // shimmer of light on top, below.
   vec2 p=uv*${SCALE.toFixed(2)}*vec2(1.0,${ANISO.toFixed(2)});
-  float t=uTime*${SPEED.toFixed(3)};
+
+  // Cursor ACTIVATION field: a soft, tight falloff around the pointer (uMouse,
+  // in this same y-normalized uv space), 1 at the cursor → 0 at ~0.28 radius,
+  // scaled by uMouseGlow (eases in/out). Where act>0 the actual flow comes alive
+  // — it does NOT add a separate glow disc; it gently drives the real ridge
+  // structure locally. Kept restrained so the H1 stays fully legible over it.
+  float act = uMouseGlow * smoothstep(0.28, 0.0, distance(uv, uMouse));
+
+  // The base drift plus a faint LOCAL quickening: near the cursor the flow's own
+  // time advances a touch faster, so the folds there stir subtly to life while
+  // the rest of the field keeps its calm pace. The field reacting, not an overlay.
+  float t=uTime*(${SPEED.toFixed(3)} + 0.035*act);
   vec2 r; float f=warp(p,t,r);
   vec2 L=normalize(vec2(${RAKE.toFixed(2)},${(1 - RAKE).toFixed(2)})+vec2(0.6,0.2));
   float eps=0.55; vec2 ra; float fL=warp(p+eps*L,t,ra);
   float ridge=(fL-f)/eps; ridge=smoothstep(-1.2,1.4,ridge);
   float sheet=smoothstep(-0.7,0.8,f);
-  float shade=clamp(0.55*ridge+0.55*sheet,0.0,1.0);
+
+  // Activation lightly amplifies the ridge highlight that already exists here —
+  // the crests near the cursor catch a little more light and read crisper, so
+  // the flow lines themselves brighten rather than a flat pool washing over them.
+  float ridgeAmp = ridge * (1.0 + 0.45*act);
+  float shade=clamp(0.55*ridgeAmp + 0.55*sheet,0.0,1.0);
   shade=pow(shade,${CONTRAST.toFixed(2)});
   vec3 col=mix(uColorLo,uColorHi,shade); col=pow(col,vec3(1.1));
   col*=1.0-0.30*dot(uv,uv);
 
-  // Cursor shimmer — a soft radial pool of light around the pointer that
-  // catches the fold structure and adds a gentle animated sparkle, fading in
-  // while hovering (uMouseGlow) and out when the cursor leaves. uMouse is in
-  // the same y-normalized uv space as this fragment.
-  float d = distance(uv, uMouse);
-  float halo = smoothstep(0.42, 0.0, d);          // soft ~0.42-radius pool
-  float twinkle = 0.6 + 0.4*sin(uTime*2.3 + d*22.0); // slow shimmer within it
-  float lift = uMouseGlow * halo * (0.28 + 0.22*ridge) * twinkle;
-  col += uColorHi * lift;
+  // A whisper of extra warmth that tracks the RIDGES within the activation zone
+  // (weighted by ridge, so valleys stay dark) — the live flow shimmers along its
+  // own crests rather than glowing as a uniform disc.
+  col += uColorHi * act * ridge * 0.12;
 
   float gr=fract(sin(dot(gl_FragCoord.xy+t*57.0,vec2(12.9898,78.233)))*43758.5453);
   col+=(gr-0.5)*${GRAIN.toFixed(3)};
