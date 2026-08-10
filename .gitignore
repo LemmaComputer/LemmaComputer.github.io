@@ -22,3 +22,6 @@ npm-debug.log*
 
 # LinkedIn card exports (regenerate from /social)
 social-export/
+
+# Throwaway prototypes / scratch
+tmp/

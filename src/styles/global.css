@@ -477,64 +477,19 @@ h1.hero-h {
    black, not faint smudges on paper. The dark section bg also covers the fixed
    #artifacts glyphs, so the hero reads clean. Field lives inside the hero at
    z:0 — behind .wrap (z:2). Clipped to the hero box, masked to fade top+bottom
-   so it melts into the black. Scrolls away with the section. .hero-field is the
-   element GSAP parallaxes toward the cursor. */
+   so it melts into the black. Scrolls away with the section. A self-built
+   WebGL2 shader (initHeroField in motion.ts) paints a domain-warped flowing
+   energy field into this canvas; the canvas is sized to its own box × DPR. */
 .hero-field {
   position: absolute;
   inset: 0;
   z-index: 0;
-  overflow: hidden;
-  pointer-events: none;
-  will-change: transform;
-  -webkit-mask-image: linear-gradient(180deg, transparent 0%, #000 14%, #000 88%, transparent 100%);
-  mask-image: linear-gradient(180deg, transparent 0%, #000 14%, #000 88%, transparent 100%);
-}
-.hf-waves {
-  position: absolute;
-  inset: 0;
+  display: block;
   width: 100%;
   height: 100%;
-}
-/* Contour lines — brighter verdigris now that they sit on black, so they read
-   as an intentional signal field rather than noise. */
-.hf-line {
-  fill: none;
-  stroke: var(--v-bright);
-  stroke-width: 1;
-  opacity: 0.22;
-  vector-effect: non-scaling-stroke;
-  will-change: transform;
-  transform-box: fill-box;
-  transform-origin: center;
-}
-/* Big, confident drifting glow blooms — the volumetric depth Trident has.
-   On black we can push opacity + size hard; the verdigris reads as living light
-   rather than a faint tint. */
-.hf-glow {
-  position: absolute;
-  border-radius: 50%;
-  filter: blur(90px);
-  will-change: transform;
-}
-.hf-glow-a {
-  width: 62vw;
-  height: 62vw;
-  max-width: 860px;
-  max-height: 860px;
-  top: -18%;
-  left: -12%;
-  opacity: 0.9;
-  background: radial-gradient(circle, rgb(61 165 136 / 0.5), transparent 68%);
-}
-.hf-glow-b {
-  width: 52vw;
-  height: 52vw;
-  max-width: 720px;
-  max-height: 720px;
-  bottom: -20%;
-  right: -8%;
-  opacity: 0.7;
-  background: radial-gradient(circle, rgb(46 128 106 / 0.42), transparent 70%);
+  pointer-events: none;
+  -webkit-mask-image: linear-gradient(180deg, transparent 0%, #000 14%, #000 88%, transparent 100%);
+  mask-image: linear-gradient(180deg, transparent 0%, #000 14%, #000 88%, transparent 100%);
 }
 /* Dark-hero legibility fixes: the .void section flips the H1/lede/mark light for
    free (via var(--text)), but a few hard-coded light-surface colours need to be
@@ -1684,17 +1639,11 @@ footer {
     opacity: 1 !important;
     transform: none !important;
   }
-  /* Hero wave field: no drift, no cursor parallax (initHeroField early-returns).
-     Keep it as a whisper-faint static texture so the hero reads calm + complete. */
+  /* Hero energy field: initHeroField paints exactly one frozen frame under
+     reduced motion (no animation loop, no cursor parallax). Nothing to override
+     here beyond killing any transform; the canvas holds a single static frame. */
   .hero-field {
     transform: none !important;
-  }
-  .hf-glow {
-    animation: none !important;
-  }
-  .hf-line {
-    transform: none !important;
-    opacity: 0.18;
   }
   /* Shot deck: no pin, no pan. Stack the shots in flow (single column, rail
      below) and show every feature so the whole tour reads statically. */

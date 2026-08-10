@@ -584,72 +584,202 @@ if (g && ST) {
   }
 
   /* ------------------------------------------------------------------ *
-   * HERO WAVE FIELD — the interactive "wavy" backdrop behind the hero.
-   * A set of SSR'd verdigris contour lines + two soft glow blooms (see
-   * .hero-field in index.astro). Each contour ripples on its own cadence and
-   * drifts slowly sideways so the field reads as a living topographic wave;
-   * the blooms wander on long lazy loops. On desktop+fine the whole field
-   * parallaxes gently toward the cursor (only while the hero is on screen).
-   * Under reduced motion this early-returns and the CSS keeps the field a
-   * faint static texture. Purely decorative; the H1 above is authoritative.
+   * HERO ENERGY FIELD — a self-built WebGL2 flowing-field backdrop.
+   *
+   * A single full-screen-triangle fragment shader (no vertex buffer, drawn off
+   * gl_VertexID) renders IQ-style domain-warped simplex fbm lit by a
+   * directional-derivative "raked" highlight, retinted to verdigris on
+   * green-black + a touch of film grain. This is our own open-source take on
+   * the Unicorn-Studio-class field on Trident's hero — no runtime, no CDN, ~a
+   * few KB of shader source, well under the JS budget (GSAP is CDN).
+   *
+   * Motion policy:
+   *   • reduced-motion or non-desktop  → paint exactly ONE frozen frame, no loop
+   *   • desktop + motion               → ~30fps drift loop, paused off-screen /
+   *                                       when the tab is hidden
+   *   • fine pointer + desktop         → cursor warps the field (uMouse)
+   * Bails silently (leaving the green-black canvas) if WebGL2 is unavailable.
+   * Decorative + aria-hidden; the H1 above stays authoritative.
    * ------------------------------------------------------------------ */
   function initHeroField() {
-    const field = document.querySelector('[data-hero-field]') as HTMLElement | null;
-    if (!field || RM) return;
-    // Desktop only: on mobile the field stays a static SSR texture. Continuous
-    // ripple/drift/glow tweens compete with touch-scroll compositing and make
-    // the whole page feel laggy on phones; the static field reads the same.
-    if (!DESKTOP) return;
-    const lines = qsa('.hf-line', field);
-    const glows = qsa('.hf-glow', field);
+    const cv = document.querySelector('[data-hero-field]') as HTMLCanvasElement | null;
+    if (!cv || typeof cv.getContext !== 'function') return;
+    const gl = cv.getContext('webgl2', { antialias: false, alpha: false }) as WebGL2RenderingContext | null;
+    if (!gl) return; // no WebGL2 → leave the CSS green-black canvas as-is
 
-    // (a) ripple — each contour breathes vertically on its own cadence.
-    lines.forEach((el, i) => {
-      g.to(el, {
-        y: i % 2 ? 9 : -9,
-        duration: 4 + (i % 5),
-        repeat: -1,
-        yoyo: true,
-        ease: 'sine.inOut',
-        delay: i * 0.12,
-      });
-      // (a2) slow lateral drift of alternating lines → the flowing read.
-      g.to(el, {
-        x: i % 2 ? 14 : -14,
-        duration: 9 + (i % 4),
-        repeat: -1,
-        yoyo: true,
-        ease: 'sine.inOut',
-      });
+    // Variant E (locked): blend of "quiet deep" + "bolder ridges" — deep dark
+    // valleys with enough flowing ridge density across the frame.
+    const OCT = 2,
+      SCALE = 0.6,
+      SPEED = 0.038,
+      WARP = 2.4,
+      RAKE = 0.91,
+      GRAIN = 0.019,
+      ANISO = 0.48,
+      CONTRAST = 2.15;
+    // Verdigris #3da588 on green-black #060a09 (matches tokens.css --v-bright/--void).
+    const HI = [0.239, 0.647, 0.533],
+      LO = [0.024, 0.039, 0.035];
+
+    const VERT = `#version 300 es
+const vec2 P[3] = vec2[3](vec2(-1.,-1.), vec2(3.,-1.), vec2(-1.,3.));
+void main(){ gl_Position = vec4(P[gl_VertexID], 0.0, 1.0); }`;
+    // Ashima simplex noise (MIT) — inlined.
+    const SNOISE = `
+vec3 mod289(vec3 x){return x-floor(x*(1.0/289.0))*289.0;}
+vec2 mod289(vec2 x){return x-floor(x*(1.0/289.0))*289.0;}
+vec3 permute(vec3 x){return mod289(((x*34.0)+1.0)*x);}
+float snoise(vec2 v){
+  const vec4 C = vec4(0.211324865405187,0.366025403784439,-0.577350269189626,0.024390243902439);
+  vec2 i=floor(v+dot(v,C.yy)); vec2 x0=v-i+dot(i,C.xx);
+  vec2 i1=(x0.x>x0.y)?vec2(1.,0.):vec2(0.,1.);
+  vec4 x12=x0.xyxy+C.xxzz; x12.xy-=i1; i=mod289(i);
+  vec3 p=permute(permute(i.y+vec3(0.,i1.y,1.))+i.x+vec3(0.,i1.x,1.));
+  vec3 m=max(0.5-vec3(dot(x0,x0),dot(x12.xy,x12.xy),dot(x12.zw,x12.zw)),0.); m=m*m; m=m*m;
+  vec3 x=2.*fract(p*C.www)-1.; vec3 h=abs(x)-0.5; vec3 ox=floor(x+0.5); vec3 a0=x-ox;
+  m*=1.79284291400159-0.85373472095314*(a0*a0+h*h);
+  vec3 g; g.x=a0.x*x0.x+h.x*x0.y; g.yz=a0.yz*x12.xz+h.yz*x12.yw;
+  return 130.*dot(m,g);
+}`;
+    const FRAG = `#version 300 es
+precision highp float;
+uniform vec2 uResolution; uniform float uTime; uniform vec2 uMouse;
+uniform vec3 uColorLo; uniform vec3 uColorHi;
+out vec4 fragColor;
+${SNOISE}
+const mat2 M=mat2(0.8,-0.6,0.6,0.8);
+float fbm(vec2 p){ float a=0.5,s=0.0; for(int i=0;i<${OCT};i++){ s+=a*snoise(p); p=M*p*1.99; a*=0.5;} return s; }
+float warp(vec2 p,float t,out vec2 r){
+  vec2 q=vec2(fbm(p+0.10*t), fbm(p+vec2(5.2,1.3)-0.08*t));
+  r=vec2(fbm(p+${WARP.toFixed(1)}*q+vec2(1.7,9.2)), fbm(p+${WARP.toFixed(1)}*q+vec2(8.3,2.8)));
+  return fbm(p+${WARP.toFixed(1)}*r);
+}
+void main(){
+  vec2 uv=(gl_FragCoord.xy-0.5*uResolution)/uResolution.y;
+  vec2 p=uv*${SCALE.toFixed(2)}*vec2(1.0,${ANISO.toFixed(2)}) + uMouse*0.10;
+  float t=uTime*${SPEED.toFixed(3)};
+  vec2 r; float f=warp(p,t,r);
+  vec2 L=normalize(vec2(${RAKE.toFixed(2)},${(1 - RAKE).toFixed(2)})+vec2(0.6,0.2));
+  float eps=0.55; vec2 ra; float fL=warp(p+eps*L,t,ra);
+  float ridge=(fL-f)/eps; ridge=smoothstep(-1.2,1.4,ridge);
+  float sheet=smoothstep(-0.7,0.8,f);
+  float shade=clamp(0.55*ridge+0.55*sheet,0.0,1.0);
+  shade=pow(shade,${CONTRAST.toFixed(2)});
+  vec3 col=mix(uColorLo,uColorHi,shade); col=pow(col,vec3(1.1));
+  col*=1.0-0.30*dot(uv,uv);
+  float gr=fract(sin(dot(gl_FragCoord.xy+t*57.0,vec2(12.9898,78.233)))*43758.5453);
+  col+=(gr-0.5)*${GRAIN.toFixed(3)};
+  fragColor=vec4(col,1.0);
+}`;
+
+    const compile = (type: number, src: string) => {
+      const s = gl.createShader(type)!;
+      gl.shaderSource(s, src);
+      gl.compileShader(s);
+      if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) {
+        console.error('[hero-field]', gl.getShaderInfoLog(s));
+        return null;
+      }
+      return s;
+    };
+    const vs = compile(gl.VERTEX_SHADER, VERT);
+    const fs = compile(gl.FRAGMENT_SHADER, FRAG);
+    if (!vs || !fs) return;
+    const prog = gl.createProgram()!;
+    gl.attachShader(prog, vs);
+    gl.attachShader(prog, fs);
+    gl.linkProgram(prog);
+    if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) return;
+    gl.useProgram(prog);
+
+    const uRes = gl.getUniformLocation(prog, 'uResolution');
+    const uTime = gl.getUniformLocation(prog, 'uTime');
+    const uMouse = gl.getUniformLocation(prog, 'uMouse');
+    gl.uniform3fv(gl.getUniformLocation(prog, 'uColorLo'), LO);
+    gl.uniform3fv(gl.getUniformLocation(prog, 'uColorHi'), HI);
+
+    const dpr = Math.min(window.devicePixelRatio || 1, 1.5);
+    const resize = () => {
+      const r = cv.getBoundingClientRect();
+      const w = Math.max(1, Math.round(r.width * dpr));
+      const h = Math.max(1, Math.round(r.height * dpr));
+      if (cv.width !== w || cv.height !== h) {
+        cv.width = w;
+        cv.height = h;
+        gl.viewport(0, 0, w, h);
+        gl.uniform2f(uRes, w, h);
+      }
+    };
+    resize();
+
+    let mx = 0,
+      my = 0;
+    const draw = (tSec: number) => {
+      gl.uniform1f(uTime, tSec);
+      gl.uniform2f(uMouse, mx, my);
+      gl.drawArrays(gl.TRIANGLES, 0, 3);
+    };
+
+    // Reduced motion OR non-desktop → one frozen frame, no rAF loop, no cursor.
+    // A single static shader frame is cheap and reads the same; a live loop
+    // fights touch-scroll compositing on phones and violates the RM contract.
+    if (RM || !DESKTOP) {
+      draw(8.0); // a settled, non-origin frame with pleasant fold structure
+      return;
+    }
+
+    // Desktop + motion: ~30fps drift loop, paused off-screen and when hidden.
+    const start = performance.now();
+    let raf = 0;
+    let visible = true;
+    const FRAME = 1000 / 30;
+    let last = -Infinity;
+    const tick = (now: number) => {
+      raf = requestAnimationFrame(tick);
+      if (now - last < FRAME) return;
+      last = now;
+      resize();
+      draw((now - start) / 1000);
+    };
+    const play = () => {
+      if (!raf) {
+        last = -Infinity;
+        raf = requestAnimationFrame(tick);
+      }
+    };
+    const stop = () => {
+      if (raf) {
+        cancelAnimationFrame(raf);
+        raf = 0;
+      }
+    };
+
+    if ('IntersectionObserver' in window) {
+      new IntersectionObserver(
+        (entries) => {
+          visible = entries.some((en) => en.isIntersecting);
+          if (visible && !document.hidden) play();
+          else stop();
+        },
+        { threshold: 0 }
+      ).observe(cv);
+    }
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden) stop();
+      else if (visible) play();
     });
+    addEventListener('resize', resize, { passive: true });
+    play();
 
-    // (b) drifting glow blooms — long, lazy, opposed loops.
-    glows.forEach((el, i) => {
-      g.to(el, {
-        x: i ? -70 : 80,
-        y: i ? 54 : -46,
-        duration: 14 + i * 4,
-        repeat: -1,
-        yoyo: true,
-        ease: 'sine.inOut',
-      });
-    });
-
-    // (c) cursor parallax — desktop + fine pointer only, gated to the hero view
-    // so we stop tracking (and stop tweening) once it has scrolled away.
-    if (FINE && DESKTOP) {
-      const qx = g.quickTo(field, 'x', { duration: 0.9, ease: 'power2.out' });
-      const qy = g.quickTo(field, 'y', { duration: 0.9, ease: 'power2.out' });
-      // Only parallax while the hero is on screen. The field is absolutely
-      // positioned to the hero box, so its bottom edge tells us when the hero
-      // has scrolled past — cheaper and more robust than a ScrollTrigger on an
-      // absolutely-positioned element (whose start/end mis-measure).
+    // Cursor warp — fine pointer + desktop only. Feeds uMouse; the shader adds
+    // it into the sample position so the folds flow toward the cursor.
+    if (FINE) {
       addEventListener(
         'pointermove',
         (e) => {
-          if (field.getBoundingClientRect().bottom <= 0) return; // hero gone
-          qx((e.clientX / innerWidth - 0.5) * 44); // ±22px
-          qy((e.clientY / innerHeight - 0.5) * 44);
+          if (cv.getBoundingClientRect().bottom <= 0) return; // hero gone
+          mx = e.clientX / innerWidth - 0.5;
+          my = -(e.clientY / innerHeight - 0.5);
         },
         { passive: true }
       );
