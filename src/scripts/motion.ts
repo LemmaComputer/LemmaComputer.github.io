@@ -580,6 +580,10 @@ if (g && ST) {
   function initHeroField() {
     const field = document.querySelector('[data-hero-field]') as HTMLElement | null;
     if (!field || RM) return;
+    // Desktop only: on mobile the field stays a static SSR texture. Continuous
+    // ripple/drift/glow tweens compete with touch-scroll compositing and make
+    // the whole page feel laggy on phones; the static field reads the same.
+    if (!DESKTOP) return;
     const lines = qsa('.hf-line', field);
     const glows = qsa('.hf-glow', field);
 

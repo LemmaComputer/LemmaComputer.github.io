@@ -17,7 +17,12 @@ body {
   font-size: 16px;
   line-height: 1.6;
   -webkit-font-smoothing: antialiased;
-  overflow-x: hidden;
+  /* Clip (not hidden) horizontally: `overflow-x:hidden` forces `overflow-y` to
+     compute to `auto`, which turns <body> itself into a scroll container. That
+     breaks momentum scrolling and position:sticky on mobile (the objection wall
+     stage, the carousels) and desyncs from the html scroller. `clip` contains
+     horizontal spill without creating a scroll box, so html stays the scroller. */
+  overflow-x: clip;
   transition: background 0.6s var(--e), color 0.6s var(--e);
 }
 ::selection {
@@ -1475,8 +1480,13 @@ footer {
     position: static;
     height: auto;
     overflow-x: auto;
-    scroll-snap-type: x mandatory;
+    /* proximity, not mandatory: mandatory snap on a horizontal scroller nested
+       in the vertical page hijacks near-vertical swipes and makes the page
+       resist scrolling past the carousel. proximity only snaps when you settle
+       close to a pane, so vertical intent always wins. */
+    scroll-snap-type: x proximity;
     -webkit-overflow-scrolling: touch;
+    overscroll-behavior-x: contain;
     transform: none !important;
   }
   .deck-pane {
@@ -1497,8 +1507,9 @@ footer {
   }
   .proof-track {
     overflow-x: auto;
-    scroll-snap-type: x mandatory;
+    scroll-snap-type: x proximity;
     -webkit-overflow-scrolling: touch;
+    overscroll-behavior-x: contain;
     transform: none !important;
     gap: 16px;
   }
@@ -1514,6 +1525,10 @@ footer {
      pin is disabled on mobile in motion.ts; this is the static fallback. */
   .arch-stage {
     grid-template-columns: 1fr;
+    /* Kill the desktop `height:100vh` (~812px): stacked, the diagram + notes
+       need ~1300px, so a fixed-height stage clips them and the overflow bleeds
+       down into #proof. `height:auto` lets the stage grow to its content. */
+    height: auto;
     min-height: auto;
     gap: 32px;
     padding: 40px 0 8px;
@@ -1684,6 +1699,9 @@ footer {
      action packets hidden, notes all visible, nothing pinned. The aria-label
      carries the full causal story regardless of motion. */
   .arch-stage {
+    /* Nothing is pinned under reduced motion, so drop the desktop 100vh lock —
+       otherwise the stacked diagram + notes overflow the fixed-height stage. */
+    height: auto;
     min-height: auto;
     padding: 40px 0;
   }
