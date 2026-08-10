@@ -1,0 +1,449 @@
+---
+// LinkedIn carousel export — FIVE 1200×1200 cards, "hybrid" edition: real
+// product surfaces (the live WebGL shimmer hero, a real Ubuntu-desktop VM
+// screenshot) framed in the LemmaComputer card language, plus the newest
+// interactive beats (separation-of-duties approval, signed trail) rebuilt as
+// clean static frames. Not linked from the site, noindex, excluded from QA.
+//
+// Each `.card` is exactly 1200×1200. The two dark cards paint the SAME
+// flowing-ridge shader as the live hero (motion.ts initHeroField, Variant E)
+// via a small self-contained WebGL block below — no GSAP, one settled frame
+// with a fixed shimmer bloom so it screenshots deterministically.
+//
+// Export: view /social-carousel/#card-N to isolate one card in a bare
+// 1200×1200 frame (no gutter), then screenshot the viewport. No hash = the
+// full contact sheet.
+import { site } from '../config/site';
+const gh = 'github.com/LemmaComputer/LemmaComputer';
+---
+
+<!doctype html>
+<html lang="en" data-theme="light">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,200;0,6..72,300;0,6..72,400;0,6..72,500;1,6..72,300&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
+    <title>LemmaComputer — LinkedIn carousel</title>
+    <style is:global>
+      :root {
+        --ink: #15181a;
+        --graphite: #5c6462;
+        --rule: #d6dad6;
+        --chalk: #f3f5f2;
+        --paper: #fff;
+        --verdigris: #1e6b57;
+        --v-bright: #2f9077;
+        --amber: #b8862b;
+        --oxide: #9e382b;
+        --void: #060a09;
+        --void-paper: #16191b;
+        --void-text: #e9ece8;
+        --void-text-2: #8a9290;
+        --void-rule: #232829;
+        --void-verdigris: #3da588;
+        --void-amber: #d8a441;
+        --serif: 'Newsreader', Georgia, serif;
+        --sans: 'Inter', system-ui, sans-serif;
+        --mono: 'JetBrains Mono', ui-monospace, monospace;
+      }
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      html, body { background: #4a4f4d; }
+      body {
+        font-family: var(--sans);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 40px;
+        padding: 40px;
+        -webkit-font-smoothing: antialiased;
+        text-rendering: optimizeLegibility;
+      }
+      body.solo { padding: 0; gap: 0; background: transparent; }
+      body.solo .card { display: none; }
+      body.solo .card.is-solo { display: flex; }
+
+      .card {
+        width: 1200px;
+        height: 1200px;
+        position: relative;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        background: var(--chalk);
+        color: var(--ink);
+        padding: 96px 100px;
+      }
+      .card.dark { background: var(--void); color: var(--void-text); }
+      .card::after {
+        content: '';
+        position: absolute; inset: 0; pointer-events: none;
+        background: radial-gradient(120% 90% at 50% 0%, transparent 60%, rgb(0 0 0 / 0.03));
+      }
+      .card.dark::after {
+        background: radial-gradient(120% 90% at 50% 0%, transparent 55%, rgb(0 0 0 / 0.42));
+      }
+
+      /* WebGL shimmer canvas — full-bleed behind a dark card's content. */
+      .field {
+        position: absolute; inset: 0; width: 100%; height: 100%;
+        display: block; z-index: 0;
+      }
+      .card.dark > *:not(.field) { position: relative; z-index: 1; }
+
+      .kicker {
+        font-family: var(--mono);
+        font-size: 22px; font-weight: 500;
+        letter-spacing: 0.22em; text-transform: uppercase;
+        color: var(--verdigris);
+      }
+      .dark .kicker { color: var(--void-verdigris); }
+      .kicker .dot { color: var(--graphite); }
+      .dark .kicker .dot { color: var(--void-text-2); }
+
+      h1 {
+        font-family: var(--serif); font-weight: 300;
+        letter-spacing: -0.015em; line-height: 1.02; color: var(--ink);
+      }
+      .dark h1 { color: var(--void-text); }
+      .lede {
+        font-size: 34px; line-height: 1.42; color: var(--graphite);
+        font-weight: 400; max-width: 20ch;
+      }
+      .dark .lede { color: var(--void-text-2); }
+      .em { color: var(--verdigris); font-weight: 500; }
+      .dark .em { color: var(--void-verdigris); }
+
+      .spacer { flex: 1; }
+
+      .brand {
+        display: flex; align-items: center; gap: 14px;
+        font-family: var(--sans); font-weight: 700;
+        font-size: 26px; letter-spacing: -0.01em;
+      }
+      .brand .mark { width: 20px; height: 20px; background: var(--verdigris); border-radius: 3px; }
+      .dark .brand .mark { background: var(--void-verdigris); }
+      .brand .of {
+        font-family: var(--mono); font-weight: 400; font-size: 18px;
+        letter-spacing: 0.04em; color: var(--graphite); text-transform: none;
+      }
+      .dark .brand .of { color: var(--void-text-2); }
+
+      .footer-row { display: flex; align-items: flex-end; justify-content: space-between; gap: 24px; }
+      .pagemark { font-family: var(--mono); font-size: 20px; letter-spacing: 0.1em; color: var(--graphite); }
+      .dark .pagemark { color: var(--void-text-2); }
+
+      /* =========================================================
+         CARD 1 — HERO (dark, live shimmer)
+      ========================================================= */
+      /* Column card: centered content block in a flex-1 region, footer in
+         normal flow at the bottom — no absolute overlap possible. */
+      .c-hero { align-items: center; text-align: center; padding: 100px; }
+      .c-hero .hero-stack { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+      .c-hero .kicker { letter-spacing: 0.28em; }
+      .c-hero h1 { font-size: 112px; line-height: 0.98; margin: 40px 0 40px; }
+      .c-hero h1 .a { display: block; color: var(--void-text); }
+      .c-hero h1 .b { display: block; color: var(--void-verdigris); }
+      .c-hero .lede { max-width: 30ch; text-align: center; font-size: 30px; color: var(--void-text-2); }
+      .c-hero .footer-row { width: 100%; }
+
+      /* =========================================================
+         CARD 2 — SEPARATION OF DUTIES (light, phone)
+      ========================================================= */
+      .c-appr h1 { font-size: 72px; max-width: 15ch; margin-top: 18px; }
+      .appr-stage { margin-top: 56px; display: grid; grid-template-columns: 1fr 300px; gap: 44px; align-items: start; }
+      .appr-req { display: flex; flex-direction: column; gap: 20px; }
+      .req-card {
+        border: 1.5px solid var(--rule); border-radius: 14px; background: var(--paper);
+        padding: 30px 34px;
+      }
+      .req-card .tag { font-family: var(--mono); font-size: 17px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--amber); }
+      .req-card .title { font-family: var(--serif); font-size: 34px; font-weight: 400; margin-top: 8px; line-height: 1.12; }
+      .req-card .facts { margin-top: 18px; display: grid; grid-template-columns: auto 1fr; gap: 8px 20px; font-family: var(--mono); font-size: 19px; }
+      .req-card .facts dt { color: var(--graphite); }
+      .req-card .facts dd { color: var(--ink); }
+      .track { display: flex; flex-direction: column; gap: 12px; font-family: var(--mono); font-size: 19px; }
+      .track .step { display: flex; align-items: center; gap: 14px; color: var(--graphite); }
+      .track .step .b { width: 12px; height: 12px; border-radius: 50%; border: 2px solid var(--rule); flex: none; }
+      .track .step.on { color: var(--verdigris); }
+      .track .step.on .b { background: var(--verdigris); border-color: var(--verdigris); }
+      /* phone */
+      .phone {
+        width: 300px; height: 610px; border-radius: 42px; background: var(--void);
+        border: 8px solid #23282a; box-shadow: 0 30px 60px rgb(0 0 0 / 0.22);
+        padding: 30px 24px; display: flex; flex-direction: column; position: relative;
+      }
+      .phone .notch { position: absolute; top: 16px; left: 50%; transform: translateX(-50%); width: 90px; height: 8px; border-radius: 5px; background: #23282a; }
+      .phone .ph-k { font-family: var(--mono); font-size: 15px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--void-verdigris); margin-top: 20px; }
+      .phone .ph-t { font-family: var(--serif); color: var(--void-text); font-size: 30px; font-weight: 400; margin-top: 12px; line-height: 1.14; }
+      .phone .ph-meta { font-family: var(--mono); font-size: 16px; color: var(--void-text-2); margin-top: 16px; line-height: 1.5; }
+      .phone .ph-actions { margin-top: auto; display: flex; flex-direction: column; gap: 12px; }
+      .phone .btn { border-radius: 12px; padding: 16px; text-align: center; font-family: var(--sans); font-weight: 600; font-size: 20px; }
+      .phone .btn.deny { border: 1.5px solid var(--void-rule); color: var(--void-text-2); }
+      .phone .btn.approve { background: var(--void-verdigris); color: #06231c; }
+      .phone .ph-sig { font-family: var(--mono); font-size: 14px; color: var(--void-text-2); margin-top: 16px; text-align: center; }
+
+      /* =========================================================
+         CARD 3 — REAL DESKTOP PROOF (dark, screenshot)
+      ========================================================= */
+      .c-proof { padding: 84px 84px 96px; }
+      .c-proof h1 { font-size: 62px; max-width: 17ch; }
+      .c-proof .shot-wrap {
+        margin-top: 44px; flex: 1; border-radius: 16px; overflow: hidden;
+        border: 1px solid var(--void-rule); background: #000;
+        box-shadow: 0 30px 70px rgb(0 0 0 / 0.5); position: relative;
+      }
+      .c-proof .shot-wrap img { width: 100%; height: 100%; object-fit: cover; object-position: top center; display: block; }
+      .c-proof .footer-row { margin-top: 40px; }
+
+      /* =========================================================
+         CARD 4 — FOUR GUARDRAILS (light, grid)
+      ========================================================= */
+      .c-rails h1 { font-size: 72px; max-width: 14ch; }
+      .grid { margin-top: 60px; display: grid; grid-template-columns: 1fr 1fr; gap: 28px; }
+      .cell { border: 1.5px solid var(--rule); border-radius: 14px; padding: 38px 40px; background: var(--paper); }
+      .cell .n { font-family: var(--mono); font-size: 20px; color: var(--verdigris); letter-spacing: 0.1em; }
+      .cell h3 { font-family: var(--serif); font-weight: 400; font-size: 40px; margin-top: 12px; line-height: 1.05; }
+      .cell p { font-size: 24px; line-height: 1.45; color: var(--graphite); margin-top: 14px; }
+
+      /* =========================================================
+         CARD 5 — SIGNED TRAIL / CTA (dark, ledger, live shimmer)
+      ========================================================= */
+      .c-trail h1 { font-size: 78px; max-width: 12ch; margin-top: 16px; }
+      .c-trail .lede { color: var(--void-text-2); margin-top: 24px; max-width: 30ch; }
+      .ledger {
+        margin-top: 44px; border: 1px solid var(--void-rule); border-radius: 14px; overflow: hidden;
+        font-family: var(--mono); font-size: 23px; background: rgb(6 10 9 / 0.55); backdrop-filter: blur(2px);
+      }
+      .ledger .row { display: flex; align-items: center; gap: 26px; padding: 24px 32px; border-bottom: 1px solid var(--void-rule); color: var(--void-text); }
+      .ledger .row:last-child { border-bottom: 0; }
+      .ledger .time { color: var(--void-text-2); font-size: 20px; }
+      .ledger .hash { color: var(--void-verdigris); }
+      .ledger .verb { flex: 1; }
+      .ledger .sig { color: var(--void-amber); font-size: 20px; }
+      .repo {
+        margin-top: 44px; display: inline-flex; align-items: center; gap: 16px;
+        font-family: var(--mono); font-size: 26px; font-weight: 500; color: var(--void-text);
+        border: 2px solid var(--void-verdigris); border-radius: 14px; padding: 20px 30px; align-self: flex-start;
+        background: rgb(61 165 136 / 0.08);
+      }
+      .repo .gh { width: 30px; height: 30px; display: inline-block; color: var(--void-verdigris); }
+    </style>
+  </head>
+  <body>
+    <!-- ============ CARD 1 · HERO (dark, live shimmer) ============ -->
+    <section class="card dark c-hero" data-card="1">
+      <canvas class="field" data-field aria-hidden="true"></canvas>
+      <div class="hero-stack">
+        <p class="kicker">LemmaComputer <span class="dot">·</span> a product of LemmaLabs</p>
+        <h1><span class="a">Any agent.</span><span class="b">One governed computer.</span></h1>
+        <p class="lede">Run Claude, Codex, or Hermes on a computer your company can actually trust.</p>
+      </div>
+      <div class="footer-row">
+        <div class="brand"><span class="mark"></span>LemmaComputer</div>
+        <span class="pagemark">01 / 05</span>
+      </div>
+    </section>
+
+    <!-- ============ CARD 2 · SEPARATION OF DUTIES (light) ============ -->
+    <section class="card c-appr" data-card="2">
+      <p class="kicker">Separation of duties</p>
+      <h1>A sensitive action<br />shouldn't approve itself.</h1>
+      <div class="appr-stage">
+        <div class="appr-req">
+          <div class="req-card">
+            <span class="tag">⚠ Why it paused</span>
+            <div class="title">Agent wants to change production config</div>
+            <dl class="facts">
+              <dt>agent</dt><dd>My Claude</dd>
+              <dt>target</dt><dd>prod · billing-svc</dd>
+              <dt>policy</dt><dd>human approval required</dd>
+            </dl>
+          </div>
+          <div class="track">
+            <div class="step on"><span class="b"></span>Action requested</div>
+            <div class="step on"><span class="b"></span>Sent to approver</div>
+            <div class="step"><span class="b"></span>Decision verified</div>
+          </div>
+        </div>
+        <div class="phone">
+          <span class="notch"></span>
+          <span class="ph-k">Approver's phone</span>
+          <div class="ph-t">Approve config change on prod?</div>
+          <div class="ph-meta">My Claude · billing-svc<br />requested 09:14 · expires in 5m</div>
+          <div class="ph-actions">
+            <div class="btn deny">Deny</div>
+            <div class="btn approve">Approve</div>
+            <div class="ph-sig">did:webvh:approver · ed25519</div>
+          </div>
+        </div>
+      </div>
+      <div class="spacer"></div>
+      <div class="footer-row">
+        <div class="brand"><span class="mark"></span>LemmaComputer</div>
+        <span class="pagemark">02 / 05</span>
+      </div>
+    </section>
+
+    <!-- ============ CARD 3 · REAL DESKTOP PROOF (dark) ============ -->
+    <section class="card dark c-proof" data-card="3">
+      <p class="kicker">Not a chat box <span class="dot">·</span> a whole desktop</p>
+      <h1 style="margin-top:16px">A real Ubuntu desktop,<br />inside a governed VM.</h1>
+      <div class="shot-wrap">
+        <img src="/shots/claude-desktop-vm.png" alt="An AI agent operating a real Ubuntu desktop inside a governed VM" />
+      </div>
+      <div class="footer-row">
+        <div class="brand"><span class="mark"></span>LemmaComputer</div>
+        <span class="pagemark">03 / 05</span>
+      </div>
+    </section>
+
+    <!-- ============ CARD 4 · FOUR GUARDRAILS (light) ============ -->
+    <section class="card c-rails" data-card="4">
+      <p class="kicker">Four guardrails, always on</p>
+      <h1 style="margin-top:20px">Freedom inside,<br />control at the edge.</h1>
+      <div class="grid">
+        <div class="cell"><span class="n">01</span><h3>Managed workspace</h3><p>Each agent runs in an isolated VM with a real desktop — not a chat box.</p></div>
+        <div class="cell"><span class="n">02</span><h3>Egress firewall</h3><p>Reaching the web is default-deny. Unmatched egress never leaves.</p></div>
+        <div class="cell"><span class="n">03</span><h3>Tool approvals</h3><p>High-risk tools stay blocked until a human reviews and approves.</p></div>
+        <div class="cell"><span class="n">04</span><h3>Signed trail</h3><p>What passes lands in the Trail — signed, timestamped, replayable.</p></div>
+      </div>
+      <div class="spacer"></div>
+      <div class="footer-row">
+        <div class="brand"><span class="mark"></span>LemmaComputer</div>
+        <span class="pagemark">04 / 05</span>
+      </div>
+    </section>
+
+    <!-- ============ CARD 5 · SIGNED TRAIL + CTA (dark, live shimmer) ============ -->
+    <section class="card dark c-trail" data-card="5">
+      <canvas class="field" data-field aria-hidden="true"></canvas>
+      <p class="kicker">Everything is recorded</p>
+      <h1>If it happened,<br />it's signed.</h1>
+      <p class="lede">Every action is a signed, timestamped ledger entry — an audit trail you can answer with.</p>
+      <div class="ledger">
+        <div class="row"><span class="time">09:14:02</span><span class="verb">policy re-checked</span><span class="hash">a8dc5ec2c0</span></div>
+        <div class="row"><span class="time">09:14:07</span><span class="verb">egress denied · unmatched host</span><span class="sig">✎ signed</span></div>
+        <div class="row"><span class="time">09:14:19</span><span class="verb">tool approved · human review</span><span class="hash">2db7320a15</span></div>
+        <div class="row"><span class="time">09:14:31</span><span class="verb">action recorded · verified</span><span class="sig">✎ signed</span></div>
+      </div>
+      <div class="repo">
+        <svg class="gh" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+        {gh}
+      </div>
+      <div class="spacer"></div>
+      <div class="footer-row">
+        <div class="brand"><span class="mark"></span>LemmaComputer<span class="of">a product of LemmaLabs</span></div>
+        <span class="pagemark">05 / 05</span>
+      </div>
+    </section>
+
+    <!-- WebGL shimmer for the dark cards — same Variant-E shader as the live
+         hero (motion.ts initHeroField), painted as one settled frame with a
+         fixed shimmer bloom so each card screenshots deterministically. -->
+    <script is:inline>
+      (function () {
+        var VERT = '#version 300 es\n'
+          + 'const vec2 P[3] = vec2[3](vec2(-1.,-1.), vec2(3.,-1.), vec2(-1.,3.));\n'
+          + 'void main(){ gl_Position = vec4(P[gl_VertexID], 0.0, 1.0); }';
+        var SNOISE = '\n'
+          + 'vec3 mod289(vec3 x){return x-floor(x*(1.0/289.0))*289.0;}\n'
+          + 'vec2 mod289(vec2 x){return x-floor(x*(1.0/289.0))*289.0;}\n'
+          + 'vec3 permute(vec3 x){return mod289(((x*34.0)+1.0)*x);}\n'
+          + 'float snoise(vec2 v){\n'
+          + '  const vec4 C = vec4(0.211324865405187,0.366025403784439,-0.577350269189626,0.024390243902439);\n'
+          + '  vec2 i=floor(v+dot(v,C.yy)); vec2 x0=v-i+dot(i,C.xx);\n'
+          + '  vec2 i1=(x0.x>x0.y)?vec2(1.,0.):vec2(0.,1.);\n'
+          + '  vec4 x12=x0.xyxy+C.xxzz; x12.xy-=i1; i=mod289(i);\n'
+          + '  vec3 p=permute(permute(i.y+vec3(0.,i1.y,1.))+i.x+vec3(0.,i1.x,1.));\n'
+          + '  vec3 m=max(0.5-vec3(dot(x0,x0),dot(x12.xy,x12.xy),dot(x12.zw,x12.zw)),0.); m=m*m; m=m*m;\n'
+          + '  vec3 x=2.*fract(p*C.www)-1.; vec3 h=abs(x)-0.5; vec3 ox=floor(x+0.5); vec3 a0=x-ox;\n'
+          + '  m*=1.79284291400159-0.85373472095314*(a0*a0+h*h);\n'
+          + '  vec3 g; g.x=a0.x*x0.x+h.x*x0.y; g.yz=a0.yz*x12.xz+h.yz*x12.yw;\n'
+          + '  return 130.*dot(m,g);\n'
+          + '}';
+        // Variant E constants (match motion.ts initHeroField exactly).
+        var OCT=2, SCALE=0.6, WARP=2.4, RAKE=0.91, GRAIN=0.019, ANISO=0.48, CONTRAST=2.15;
+        var HI=[0.239,0.647,0.533], LO=[0.024,0.039,0.035];
+        var FRAG = '#version 300 es\n'
+          + 'precision highp float;\n'
+          + 'uniform vec2 uResolution; uniform float uTime; uniform vec2 uMouse; uniform float uMouseGlow;\n'
+          + 'uniform vec3 uColorLo; uniform vec3 uColorHi;\n'
+          + 'out vec4 fragColor;\n'
+          + SNOISE + '\n'
+          + 'const mat2 M=mat2(0.8,-0.6,0.6,0.8);\n'
+          + 'float fbm(vec2 p){ float a=0.5,s=0.0; for(int i=0;i<' + OCT + ';i++){ s+=a*snoise(p); p=M*p*1.99; a*=0.5;} return s; }\n'
+          + 'float warp(vec2 p,float t,out vec2 r){\n'
+          + '  vec2 q=vec2(fbm(p+0.10*t), fbm(p+vec2(5.2,1.3)-0.08*t));\n'
+          + '  r=vec2(fbm(p+' + WARP.toFixed(1) + '*q+vec2(1.7,9.2)), fbm(p+' + WARP.toFixed(1) + '*q+vec2(8.3,2.8)));\n'
+          + '  return fbm(p+' + WARP.toFixed(1) + '*r);\n'
+          + '}\n'
+          + 'void main(){\n'
+          + '  vec2 uv=(gl_FragCoord.xy-0.5*uResolution)/uResolution.y;\n'
+          + '  vec2 p=uv*' + SCALE.toFixed(2) + '*vec2(1.0,' + ANISO.toFixed(2) + ');\n'
+          + '  float act = uMouseGlow * smoothstep(0.20, 0.0, distance(uv, uMouse));\n'
+          + '  float t=uTime*(0.038 + 0.012*act);\n'
+          + '  vec2 r; float f=warp(p,t,r);\n'
+          + '  vec2 L=normalize(vec2(' + RAKE.toFixed(2) + ',' + (1-RAKE).toFixed(2) + ')+vec2(0.6,0.2));\n'
+          + '  float eps=0.55; vec2 ra; float fL=warp(p+eps*L,t,ra);\n'
+          + '  float ridge=(fL-f)/eps; ridge=smoothstep(-1.2,1.4,ridge);\n'
+          + '  float sheet=smoothstep(-0.7,0.8,f);\n'
+          + '  float ridgeAmp = ridge * (1.0 + 0.55*act);\n'
+          + '  float shade=clamp(0.55*ridgeAmp + 0.55*sheet,0.0,1.0);\n'
+          + '  shade=pow(shade,' + CONTRAST.toFixed(2) + ');\n'
+          + '  vec3 col=mix(uColorLo,uColorHi,shade); col=pow(col,vec3(1.1));\n'
+          + '  col*=1.0-0.30*dot(uv,uv);\n'
+          + '  col += uColorHi * act * ridge * 0.16;\n'
+          + '  float gr=fract(sin(dot(gl_FragCoord.xy+t*57.0,vec2(12.9898,78.233)))*43758.5453);\n'
+          + '  col+=(gr-0.5)*' + GRAIN.toFixed(3) + ';\n'
+          + '  fragColor=vec4(col,1.0);\n'
+          + '}';
+
+        function paint(cv, glowPt) {
+          var gl = cv.getContext('webgl2', { antialias:false, alpha:false });
+          if (!gl) return;
+          function sh(type, src){ var s=gl.createShader(type); gl.shaderSource(s,src); gl.compileShader(s);
+            if(!gl.getShaderParameter(s,gl.COMPILE_STATUS)){ console.error(gl.getShaderInfoLog(s)); return null;} return s; }
+          var vs=sh(gl.VERTEX_SHADER,VERT), fs=sh(gl.FRAGMENT_SHADER,FRAG);
+          if(!vs||!fs) return;
+          var prog=gl.createProgram(); gl.attachShader(prog,vs); gl.attachShader(prog,fs); gl.linkProgram(prog);
+          if(!gl.getProgramParameter(prog,gl.LINK_STATUS)){ console.error(gl.getProgramInfoLog(prog)); return; }
+          gl.useProgram(prog);
+          gl.uniform3fv(gl.getUniformLocation(prog,'uColorLo'),LO);
+          gl.uniform3fv(gl.getUniformLocation(prog,'uColorHi'),HI);
+          var dpr=Math.min(window.devicePixelRatio||1,1.5);
+          var w=Math.round(1200*dpr), h=Math.round(1200*dpr);
+          cv.width=w; cv.height=h; gl.viewport(0,0,w,h);
+          gl.uniform2f(gl.getUniformLocation(prog,'uResolution'),w,h);
+          // Fixed shimmer bloom: a point in y-normalized uv space (x in [-0.5,0.5], y ~[-0.5,0.5]).
+          gl.uniform2f(gl.getUniformLocation(prog,'uMouse'), glowPt[0], glowPt[1]);
+          gl.uniform1f(gl.getUniformLocation(prog,'uMouseGlow'), 1.0);
+          gl.uniform1f(gl.getUniformLocation(prog,'uTime'), 8.0); // settled frame
+          gl.drawArrays(gl.TRIANGLES,0,3);
+        }
+        var glowPts = { 1: [-0.24, 0.10], 5: [0.22, -0.06] };
+        document.querySelectorAll('.card').forEach(function (card) {
+          var cv = card.querySelector('[data-field]');
+          if (cv) paint(cv, glowPts[card.getAttribute('data-card')] || [0,0]);
+        });
+
+        // Isolation-mode export helper (same contract as /social/).
+        function apply() {
+          var m = /card-(\d)/.exec(location.hash);
+          document.querySelectorAll('.card').forEach(function (c){ c.classList.remove('is-solo'); });
+          if (m) {
+            document.body.classList.add('solo');
+            var el = document.querySelector('.card[data-card="' + m[1] + '"]');
+            if (el) el.classList.add('is-solo');
+          } else { document.body.classList.remove('solo'); }
+        }
+        addEventListener('hashchange', apply); apply();
+      })();
+    </script>
+  </body>
+</html>
