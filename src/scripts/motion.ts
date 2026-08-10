@@ -568,6 +568,75 @@ if (g && ST) {
   }
 
   /* ------------------------------------------------------------------ *
+   * HERO WAVE FIELD — the interactive "wavy" backdrop behind the hero.
+   * A set of SSR'd verdigris contour lines + two soft glow blooms (see
+   * .hero-field in index.astro). Each contour ripples on its own cadence and
+   * drifts slowly sideways so the field reads as a living topographic wave;
+   * the blooms wander on long lazy loops. On desktop+fine the whole field
+   * parallaxes gently toward the cursor (only while the hero is on screen).
+   * Under reduced motion this early-returns and the CSS keeps the field a
+   * faint static texture. Purely decorative; the H1 above is authoritative.
+   * ------------------------------------------------------------------ */
+  function initHeroField() {
+    const field = document.querySelector('[data-hero-field]') as HTMLElement | null;
+    if (!field || RM) return;
+    const lines = qsa('.hf-line', field);
+    const glows = qsa('.hf-glow', field);
+
+    // (a) ripple — each contour breathes vertically on its own cadence.
+    lines.forEach((el, i) => {
+      g.to(el, {
+        y: i % 2 ? 9 : -9,
+        duration: 4 + (i % 5),
+        repeat: -1,
+        yoyo: true,
+        ease: 'sine.inOut',
+        delay: i * 0.12,
+      });
+      // (a2) slow lateral drift of alternating lines → the flowing read.
+      g.to(el, {
+        x: i % 2 ? 14 : -14,
+        duration: 9 + (i % 4),
+        repeat: -1,
+        yoyo: true,
+        ease: 'sine.inOut',
+      });
+    });
+
+    // (b) drifting glow blooms — long, lazy, opposed loops.
+    glows.forEach((el, i) => {
+      g.to(el, {
+        x: i ? -70 : 80,
+        y: i ? 54 : -46,
+        duration: 14 + i * 4,
+        repeat: -1,
+        yoyo: true,
+        ease: 'sine.inOut',
+      });
+    });
+
+    // (c) cursor parallax — desktop + fine pointer only, gated to the hero view
+    // so we stop tracking (and stop tweening) once it has scrolled away.
+    if (FINE && DESKTOP) {
+      const qx = g.quickTo(field, 'x', { duration: 0.9, ease: 'power2.out' });
+      const qy = g.quickTo(field, 'y', { duration: 0.9, ease: 'power2.out' });
+      // Only parallax while the hero is on screen. The field is absolutely
+      // positioned to the hero box, so its bottom edge tells us when the hero
+      // has scrolled past — cheaper and more robust than a ScrollTrigger on an
+      // absolutely-positioned element (whose start/end mis-measure).
+      addEventListener(
+        'pointermove',
+        (e) => {
+          if (field.getBoundingClientRect().bottom <= 0) return; // hero gone
+          qx((e.clientX / innerWidth - 0.5) * 44); // ±22px
+          qy((e.clientY / innerHeight - 0.5) * 44);
+        },
+        { passive: true }
+      );
+    }
+  }
+
+  /* ------------------------------------------------------------------ *
    * LEDGER TICKER — a live governed-trail marquee pinned to the bottom.
    * CSS animates the scroll (@keyframes flow); JS just fills + refreshes the
    * content. Paused under reduced motion (CSS sets animation:none there).
@@ -663,6 +732,7 @@ if (g && ST) {
    * INIT + ScrollTrigger robustness
    * ------------------------------------------------------------------ */
   initArtifacts();
+  initHeroField();
   initTicker();
   initWall();
   initProofRail();

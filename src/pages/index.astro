@@ -109,6 +109,26 @@ const deckShots: {
     callouts: [{ x: 62, y: 30, text: 're-check before every run', gutter: 'r' }],
   },
 ];
+
+// Hero "wavy" contour field — a set of thin horizontal contour lines drawn
+// across the 1200×800 viewBox at even vertical spacing. Each line is a gentle
+// cubic bezier whose control-point offsets are deterministically varied by row
+// so the field reads as an organic topographic wave rather than parallel rules.
+// Emitted server-side; GSAP (initHeroField) only animates them, so the field
+// paints correctly with no JS and under reduced motion. Purely decorative.
+const HF_W = 1200;
+const HF_ROWS = 14;
+const heroWaves: string[] = Array.from({ length: HF_ROWS }, (_, i) => {
+  const y = ((i + 1) / (HF_ROWS + 1)) * 800; // even vertical spacing
+  // Per-row amplitude + phase so crests don't align between rows.
+  const a = 26 + (i % 4) * 10; // 26–56px wave height
+  const p = i % 2 ? 1 : -1; // alternate which way the row bows
+  const y1 = (y - a * p).toFixed(1);
+  const y2 = (y + a * p * 0.6).toFixed(1);
+  const y3 = (y - a * p * 0.4).toFixed(1);
+  // Overshoot the left/right edges so no line-end shows inside the frame.
+  return `M-60 ${y.toFixed(1)} C ${HF_W * 0.2} ${y1}, ${HF_W * 0.38} ${y2}, ${HF_W * 0.55} ${y.toFixed(1)} S ${HF_W * 0.85} ${y3}, ${HF_W + 60} ${y.toFixed(1)}`;
+});
 ---
 
 <BaseLayout>
@@ -144,6 +164,19 @@ const deckShots: {
   <main id="top">
     <!-- 1 · HERO ------------------------------------------------------------ -->
     <section class="panel center">
+      {/* Interactive "wavy" contour field — flowing verdigris contour lines +
+          two soft drifting glow blooms, behind the hero copy (z:0 inside the
+          section, above the fixed #artifacts field, below .wrap at z:2). It
+          scrolls away with the hero. Decorative + aria-hidden; the paths are
+          server-rendered so the field paints with no JS. Animated by
+          initHeroField() in motion.ts; static/faint under reduced motion. */}
+      <div class="hero-field" data-hero-field aria-hidden="true">
+        <div class="hf-glow hf-glow-a"></div>
+        <div class="hf-glow hf-glow-b"></div>
+        <svg class="hf-waves" viewBox="0 0 1200 800" preserveAspectRatio="xMidYMid slice" fill="none">
+          {heroWaves.map((d) => <path class="hf-line" d={d} />)}
+        </svg>
+      </div>
       <div class="wrap">
         <div class="hero-mark" data-r>
           <span class="mark-big">LEMMACOMPUTER<span class="qed"></span></span>

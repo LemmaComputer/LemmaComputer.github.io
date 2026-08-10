@@ -515,6 +515,62 @@ section {
 h1.hero-h {
   margin: 0;
 }
+/* ---- Hero "wavy" contour field (decorative backdrop) ----
+   Lives inside the hero section at z:0 — behind .wrap (z:2), above the fixed
+   #artifacts glyph field (fixed z:0). Clipped to the hero box and masked to
+   fade top+bottom so it melts into the paper. Scrolls away with the section.
+   .hero-field is the element GSAP parallaxes toward the cursor. */
+.hero-field {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+  will-change: transform;
+  -webkit-mask-image: linear-gradient(180deg, transparent 0%, #000 16%, #000 84%, transparent 100%);
+  mask-image: linear-gradient(180deg, transparent 0%, #000 16%, #000 84%, transparent 100%);
+}
+.hf-waves {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+.hf-line {
+  fill: none;
+  stroke: var(--verdigris);
+  stroke-width: 1;
+  opacity: 0.15;
+  vector-effect: non-scaling-stroke;
+  will-change: transform;
+  transform-box: fill-box;
+  transform-origin: center;
+}
+/* Soft drifting glow blooms behind the contour lines. */
+.hf-glow {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(72px);
+  opacity: 0.55;
+  background: radial-gradient(circle, var(--glow), transparent 70%);
+  will-change: transform;
+}
+.hf-glow-a {
+  width: 46vw;
+  height: 46vw;
+  max-width: 640px;
+  max-height: 640px;
+  top: -8%;
+  left: -6%;
+}
+.hf-glow-b {
+  width: 40vw;
+  height: 40vw;
+  max-width: 560px;
+  max-height: 560px;
+  bottom: -10%;
+  right: -4%;
+}
 /* Each word is its own span so motion.ts can rise them in behind a line mask.
    inline-block is required for the yPercent transform; &nbsp; inside each span
    preserves inter-word spacing when GSAP forces inline-block. */
@@ -1566,6 +1622,19 @@ footer {
   .nav {
     opacity: 1 !important;
     transform: none !important;
+  }
+  /* Hero wave field: no drift, no cursor parallax (initHeroField early-returns).
+     Keep it as a whisper-faint static texture so the hero reads calm + complete. */
+  .hero-field {
+    transform: none !important;
+  }
+  .hf-glow {
+    animation: none !important;
+    opacity: 0.3;
+  }
+  .hf-line {
+    transform: none !important;
+    opacity: 0.1;
   }
   /* Shot deck: no pin, no pan. Stack the shots in flow (single column, rail
      below) and show every feature so the whole tour reads statically. */
