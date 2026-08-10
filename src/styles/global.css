@@ -1438,12 +1438,18 @@ footer {
    amber for the paused/pending warning tone, oxide for a denial. The
    whole thing ships in its resting state and reads correctly with no JS.
    ================================================================== */
+/* LEFT column: the trigger (scenario cards) then the paused request. */
+.ap-left {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  min-width: 0;
+}
+/* Scenario cards — a vertical picker on the left of the split stage. */
 #approval .approval-scenarios {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 10px;
-  max-width: 780px;
-  margin-top: 40px;
+  grid-template-columns: 1fr;
+  gap: 8px;
 }
 .ap-chip {
   display: grid;
@@ -1491,18 +1497,20 @@ footer {
   color: var(--v-bright);
   border-color: rgb(61 165 136 / 0.5);
   background: rgb(61 165 136 / 0.08);
+  /* Left accent points the selected trigger at the request beneath it. */
+  box-shadow: inset 3px 0 0 var(--v-bright);
 }
 .ap-chip.is-active b {
   color: #f3f5f2;
 }
 
-/* The playground: request panel · secure link · approver phone. */
+/* The split playground: pick a request (left) · decide on the phone (right). */
 .approval-stage {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 132px minmax(300px, 350px);
-  gap: 24px;
-  align-items: center;
-  margin-top: 16px;
+  grid-template-columns: minmax(0, 1fr) minmax(300px, 340px);
+  gap: 28px;
+  align-items: start;
+  margin-top: 40px;
   padding: 28px;
   border: 1px solid var(--void-rule);
   border-radius: 4px;
@@ -1760,61 +1768,6 @@ footer {
   font-weight: 500;
   line-height: 1.35;
   color: #d5d1cb;
-}
-
-/* MIDDLE — the signed round-trip. A hairline with a travelling node. */
-.ap-link {
-  position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 420px;
-}
-.ap-link::before {
-  content: '';
-  position: absolute;
-  left: 4%;
-  right: 4%;
-  height: 1px;
-  background: linear-gradient(90deg, var(--amber), var(--v-bright));
-  opacity: 0.5;
-}
-.ap-link > span {
-  position: absolute;
-  z-index: 2;
-  left: 4%;
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: var(--v-bright);
-  box-shadow: 0 0 0 5px rgb(61 165 136 / 0.12), 0 0 22px rgb(61 165 136 / 0.8);
-}
-.ap-link > div {
-  position: relative;
-  z-index: 3;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 6px;
-  min-width: 118px;
-  padding: 14px 10px;
-  color: var(--v-bright);
-  border: 1px solid rgb(61 165 136 / 0.26);
-  border-radius: 3px;
-  background: #0b1210;
-  box-shadow: 0 14px 34px rgb(0 0 0 / 0.4);
-  text-align: center;
-}
-.ap-link b {
-  font-size: 11px;
-  font-weight: 600;
-  color: #e5e2dd;
-}
-.ap-link small {
-  max-width: 96px;
-  font-size: 9.5px;
-  line-height: 1.35;
-  color: #777d7a;
 }
 
 /* RIGHT — the approver's phone. */
@@ -2307,22 +2260,15 @@ footer {
   .cta-row .btn {
     text-align: center;
   }
-  /* Approval demo: single column. The secure-link connector is desktop-only
-     scaffolding, so drop it; the phone stacks under the request panel and the
-     scenario chips + principles collapse to one column. */
+  /* Approval demo: single column. The two-column stage collapses so the
+     scenario cards, paused request, and approver phone stack in order. */
   .approval-stage {
     grid-template-columns: 1fr;
     gap: 20px;
     padding: 18px;
   }
-  .ap-link {
-    display: none;
-  }
   .ap-phone {
     min-height: auto;
-  }
-  #approval .approval-scenarios {
-    grid-template-columns: 1fr;
   }
   .ap-principles {
     grid-template-columns: 1fr;
@@ -2361,14 +2307,12 @@ footer {
   .hero-field {
     transform: none !important;
   }
-  /* Approval demo: initApprovalDemo early-returns under RM, so the section
-     stays in its authored resting state — request panel "paused", phone showing
-     the pending decision card. That already reads as a complete, honest scene
-     (the guarantee is stated in copy, not motion), so nothing to force here
-     beyond killing any stray transform on the interactive pieces. */
+  /* Approval demo: initApprovalDemo stays interactive under RM (only the GSAP
+     state-swap fades are suppressed), so picking a card and approving/denying
+     still works — the guarantee is stated in copy, not motion. Nothing to force
+     here beyond killing any stray transform on the interactive pieces. */
   .approval-stage,
-  .ap-phone,
-  .ap-link > span {
+  .ap-phone {
     transform: none !important;
   }
   /* Shot deck: no pin, no pan. Stack the shots in flow (single column, rail

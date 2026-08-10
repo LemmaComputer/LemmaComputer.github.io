@@ -964,7 +964,7 @@ void main(){
       },
     };
 
-    const chips = qsa('.ap-chip', root.parentElement ?? document);
+    const chips = qsa('.ap-chip', root);
     const phoneReq = root.querySelector('[data-ap-phone-request]') as HTMLElement | null;
     const phoneRes = root.querySelector('[data-ap-phone-result]') as HTMLElement | null;
     const sentStep = root.querySelector('[data-step="sent"]') as HTMLElement | null;

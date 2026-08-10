@@ -459,49 +459,52 @@ const deckShots: {
           </p>
         </div>
 
-        <!-- Scenario chips — choose what the agent is asking to do. -->
-        <div class="approval-scenarios" data-r role="group" aria-label="Choose a request">
-          <button type="button" class="ap-chip is-active" data-scenario="export"
-            aria-pressed="true">
-            <span aria-hidden="true">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
-                stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M12 18v-6"/><path d="m9 15 3 3 3-3"/></svg>
-            </span>
-            <small>Data</small>
-            <b>Export customer report</b>
-          </button>
-          <button type="button" class="ap-chip" data-scenario="prod"
-            aria-pressed="false">
-            <span aria-hidden="true">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
-                stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                stroke-linejoin="round"><path d="M12 2v4"/><path d="m16.24 7.76 2.83-2.83"/><path d="M18 12h4"/><path d="m16.24 16.24 2.83 2.83"/><path d="M12 18v4"/><path d="m7.76 16.24-2.83 2.83"/><path d="M6 12H2"/><path d="m7.76 7.76-2.83-2.83"/></svg>
-            </span>
-            <small>Deploy</small>
-            <b>Change production config</b>
-          </button>
-          <button type="button" class="ap-chip" data-scenario="repo"
-            aria-pressed="false">
-            <span aria-hidden="true">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
-                stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                stroke-linejoin="round"><path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.4 5.4 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4"/></svg>
-            </span>
-            <small>Access</small>
-            <b>Connect a private repo</b>
-          </button>
-        </div>
-
-        <!-- The playground: request panel · secure link · approver phone. -->
+        <!-- Split-screen: pick a request on the LEFT (scenario cards → the
+             paused action detail), decide on the approver phone on the RIGHT. -->
         <div class="approval-stage" data-r data-approval>
-          <!-- LEFT — the governed workspace holding the paused action. -->
-          <div class="ap-request">
-            <div class="ap-request-top">
-              <span><i aria-hidden="true"></i> Governed workspace</span>
-              <small class="mono">policy · check</small>
+          <!-- LEFT — the trigger: scenario cards, then the paused action. -->
+          <div class="ap-left">
+            <!-- Scenario cards — choose what the agent is asking to do. -->
+            <div class="approval-scenarios" role="group" aria-label="Choose a request">
+              <button type="button" class="ap-chip is-active" data-scenario="export"
+                aria-pressed="true">
+                <span aria-hidden="true">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                    stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M12 18v-6"/><path d="m9 15 3 3 3-3"/></svg>
+                </span>
+                <small>Data</small>
+                <b>Export customer report</b>
+              </button>
+              <button type="button" class="ap-chip" data-scenario="prod"
+                aria-pressed="false">
+                <span aria-hidden="true">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                    stroke-linejoin="round"><path d="M12 2v4"/><path d="m16.24 7.76 2.83-2.83"/><path d="M18 12h4"/><path d="m16.24 16.24 2.83 2.83"/><path d="M12 18v4"/><path d="m7.76 16.24-2.83 2.83"/><path d="M6 12H2"/><path d="m7.76 7.76-2.83-2.83"/></svg>
+                </span>
+                <small>Deploy</small>
+                <b>Change production config</b>
+              </button>
+              <button type="button" class="ap-chip" data-scenario="repo"
+                aria-pressed="false">
+                <span aria-hidden="true">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                    stroke-linejoin="round"><path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.4 5.4 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4"/></svg>
+                </span>
+                <small>Access</small>
+                <b>Connect a private repo</b>
+              </button>
             </div>
-            <div class="ap-request-body">
+
+            <!-- The governed workspace holding the paused action. -->
+            <div class="ap-request">
+              <div class="ap-request-top">
+                <span><i aria-hidden="true"></i> Governed workspace</span>
+                <small class="mono">policy · check</small>
+              </div>
+              <div class="ap-request-body">
               <div class="ap-request-icon" aria-hidden="true">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none"
                   stroke="currentColor" stroke-width="2" stroke-linecap="round"
@@ -548,17 +551,6 @@ const deckShots: {
               </div>
             </div>
           </div>
-
-          <!-- MIDDLE — the signed round-trip between computer and phone. -->
-          <div class="ap-link" aria-hidden="true">
-            <span></span>
-            <div>
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
-                stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                stroke-linejoin="round"><rect width="18" height="11" x="3" y="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-              <b>Signed request</b>
-              <small>verifiable response</small>
-            </div>
           </div>
 
           <!-- RIGHT — the approver's phone. States swap in place. -->
