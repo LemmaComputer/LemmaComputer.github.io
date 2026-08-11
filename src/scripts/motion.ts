@@ -678,10 +678,11 @@ void main(){
   float act = uMouseGlow * smoothstep(0.20, 0.0, distance(uv, uMouse));
 
   // The base drift plus a WHISPER of local quickening: near the cursor the flow's
-  // own time advances a hair faster. Trimmed ~65% (0.035→0.012) so the folds no
-  // longer visibly ripple/stir under the pointer — the reaction is now carried by
-  // contrast/shimmer (ridge amp + warmth below), not by moving the field.
-  float t=uTime*(${SPEED.toFixed(3)} + 0.012*act);
+  // own time advances a hair faster. Trimmed hard (was 0.012, now 0.004) so the
+  // "water" motion under the pointer is essentially gone — the reaction is carried
+  // almost entirely by contrast/shimmer (ridge amp + warmth below), not by moving
+  // the field. This is the component the user flagged as too strong.
+  float t=uTime*(${SPEED.toFixed(3)} + 0.004*act);
   vec2 r; float f=warp(p,t,r);
   vec2 L=normalize(vec2(${RAKE.toFixed(2)},${(1 - RAKE).toFixed(2)})+vec2(0.6,0.2));
   float eps=0.55; vec2 ra; float fL=warp(p+eps*L,t,ra);
@@ -700,9 +701,9 @@ void main(){
 
   // A whisper of extra warmth that tracks the RIDGES within the activation zone
   // (weighted by ridge, so valleys stay dark) — the live flow shimmers along its
-  // own crests rather than glowing as a uniform disc. Slightly stronger (0.12→0.16)
-  // to carry the hover response now that the ripple is dialled back.
-  col += uColorHi * act * ridge * 0.16;
+  // own crests rather than glowing as a uniform disc. Dialled back (0.16→0.10) so
+  // the hover is a subtle shimmer + contrast lift, not a strong wash.
+  col += uColorHi * act * ridge * 0.10;
 
   float gr=fract(sin(dot(gl_FragCoord.xy+t*57.0,vec2(12.9898,78.233)))*43758.5453);
   col+=(gr-0.5)*${GRAIN.toFixed(3)};
